@@ -28,6 +28,13 @@ export const env = createEnv({
       )
       .optional(),
     POSTGRES_URL: z.string().url().optional().or(z.literal("")),
+    DB_HOST: z.string().optional(),
+    DB_PORT: z.string().optional(),
+    DB_NAME: z.string().optional(),
+    DB_USER: z.string().optional(),
+    DB_PASSWORD: z.string().optional(),
+    DB_SSL: z.string().optional(),
+    DB_SSL_REJECT_UNAUTHORIZED: z.string().optional(),
     TRELLO_APP_API_KEY: z.string().optional(),
     TRELLO_APP_SECRET: z.string().optional(),
     STRIPE_SECRET_KEY: z.string().optional(),

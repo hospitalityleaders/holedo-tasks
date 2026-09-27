@@ -78,6 +78,7 @@ FROM node:${NODE_VERSION}-alpine AS migrate
 WORKDIR /db
 
 COPY packages/db/drizzle.config.ts ./drizzle.config.ts
+COPY packages/db/src/postgres-url.ts ./src/postgres-url.ts
 COPY packages/db/migrations/ ./migrations/
 
 RUN --mount=type=cache,id=npm-cache,target=/root/.npm,sharing=locked \
