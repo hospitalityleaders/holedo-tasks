@@ -101,7 +101,9 @@ export function NewBoardForm({ isTemplate }: { isTemplate?: boolean }) {
       name: data.name,
       workspacePublicId: data.workspacePublicId,
       sourceBoardPublicId: data.template?.sourceBoardPublicId ?? undefined,
-      lists: data.template?.lists ?? [],
+      lists:
+        data.template?.lists ??
+        (isTemplate ? [] : ["Capture", "Next", "Waiting", "Done"]),
       labels: data.template?.labels ?? [],
       type: isTemplate ? "template" : "regular",
     });

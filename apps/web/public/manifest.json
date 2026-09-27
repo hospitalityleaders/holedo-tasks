@@ -1,11 +1,7 @@
 {
   "background_color": "#000000",
-  "categories": [
-    "business",
-    "productivity",
-    "utilities"
-  ],
-  "description": "The open source Trello alternative.",
+  "categories": ["business", "productivity", "utilities"],
+  "description": "Capture, organise and complete your work.",
   "display": "standalone",
   "icons": [
     {
@@ -31,9 +27,9 @@
     }
   ],
   "orientation": "portrait-primary",
-  "name": "Kan.bn | The open source alternative to Trello",
+  "name": "Holedo Tasks",
   "scope": "/",
-  "short_name": "Kan.bn",
+  "short_name": "Tasks",
   "start_url": "/",
   "theme_color": "#000000"
 }

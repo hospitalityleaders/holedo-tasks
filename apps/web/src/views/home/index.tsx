@@ -1,128 +1,131 @@
-import Image from "next/image";
 import Link from "next/link";
-import { t } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { useTheme } from "next-themes";
-import { IoLogoGithub } from "react-icons/io";
+import { HiOutlinePlusSmall } from "react-icons/hi2";
 
-import Button from "~/components/Button";
+import { authClient } from "@kan/auth/client";
+
+import { HoledoPublicShell } from "~/components/HoledoPublicShell";
 import { PageHead } from "~/components/PageHead";
-import Cta from "./components/Cta";
-import FAQs from "./components/Faqs";
-import Features from "./components/Features";
-import Layout from "./components/Layout";
-import Logos from "./components/Logos";
-import Testimonials from "./components/Testimonials";
+import { useTaskSettings } from "~/hooks/useTaskSettings";
+import { DEFAULT_TASK_RUNTIME_SETTINGS } from "~/utils/task-settings";
+
+const boardColumns = [
+  {
+    name: "Capture",
+    accent: "bg-[#32a3fd]",
+    cards: ["Prepare weekly priorities", "Follow up with the events team"],
+  },
+  {
+    name: "Next",
+    accent: "bg-[#7dc81b]",
+    cards: ["Review supplier proposal", "Confirm Friday meeting"],
+  },
+  {
+    name: "Waiting",
+    accent: "bg-[#f2b533]",
+    cards: ["Menu photography approval"],
+  },
+  {
+    name: "Done",
+    accent: "bg-[#9ca4bc]",
+    cards: ["Share launch notes"],
+  },
+];
 
 export default function HomeView() {
-  const { resolvedTheme } = useTheme();
+  const { data: settings = DEFAULT_TASK_RUNTIME_SETTINGS } = useTaskSettings();
+  const { data: session } = authClient.useSession();
+  const isAuthenticated = Boolean(session?.user);
 
   return (
-    <Layout>
-      <PageHead title="Kan.bn | The open source alternative to Trello" />
-      <div className="flex h-full w-full flex-col lg:pt-[5rem]">
-        <div className="w-full pb-10 pt-32 lg:py-32">
-          <div className="my-10 flex h-full w-full animate-fade-down flex-col items-center justify-center px-4">
-            <div className="flex items-center gap-2">
-              <div className="relative animate-fade-in overflow-hidden rounded-full bg-gradient-to-b from-light-300 to-light-400 p-[2px] dark:from-dark-300 dark:to-dark-400">
-                <div className="gradient-border absolute inset-0 animate-border-spin" />
+    <HoledoPublicShell settings={settings} isAuthenticated={isAuthenticated}>
+      <PageHead
+        title={settings.metaTitle}
+        description={settings.metaDescription}
+      />
 
-                <div className="relative z-10 rounded-full bg-light-50 dark:bg-dark-50">
-                  <Link
-                    href="https://github.com/kanbn/kan"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    className="flex items-center gap-2 px-4 py-1 text-center text-xs text-light-1000 dark:text-dark-1000 lg:text-sm"
-                  >
-                    {t`Star on Github`}
-                    <IoLogoGithub size={20} />
-                  </Link>
-                </div>
-              </div>
-
-              {/* <div className="relative overflow-hidden rounded-full bg-gradient-to-b from-light-300 to-light-400 p-[2px] dark:from-dark-300 dark:to-dark-400">
-                <div className="relative z-10 rounded-full bg-light-50 dark:bg-dark-50">
-                  <Link
-                    href="https://news.ycombinator.com/item?id=44157177"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    className="flex items-center gap-2 px-4 py-1 text-center text-xs text-light-1000 dark:text-dark-1000 lg:text-sm"
-                  >
-                    {t`#1 Hacker News`}
-                    <div className="relative">
-                      <div className="absolute inset-1 bg-white" />
-                      <IoLogoHackernews
-                        size={20}
-                        className="relative text-orange-500"
-                      />
-                    </div>
-                  </Link>
-                </div>
-              </div> */}
-            </div>
-
-            <p className="mt-2 text-center text-4xl font-bold text-light-1000 dark:text-dark-1000 lg:text-5xl">
-              <Trans>
-                The open source <br /> alternative to Trello
-              </Trans>
+      <main className="mx-auto w-full max-w-[1600px] flex-1 px-6 py-12 sm:py-16 lg:px-14">
+        <section className="mb-10 flex flex-col gap-7 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h1 className="text-5xl font-bold leading-tight tracking-[-0.02em] text-[#272e41] sm:text-6xl">
+              {settings.heroTitle}
+            </h1>
+            <p className="mt-3 max-w-[820px] text-xl leading-8 text-[#7c8990]">
+              {settings.heroSubtitle}
             </p>
+          </div>
+          <Link
+            href={isAuthenticated ? "/boards" : settings.signupUrl}
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 self-start bg-[#32a3fd] px-6 text-lg font-semibold text-white transition-colors hover:bg-[#168fe8] lg:self-auto"
+          >
+            <HiOutlinePlusSmall className="h-6 w-6" aria-hidden="true" />
+            {isAuthenticated ? "Open Tasks" : "Start capturing"}
+          </Link>
+        </section>
 
-            <p className="text-md mt-3 max-w-[450px] text-center text-light-950 dark:text-dark-900 lg:max-w-[600px] lg:text-lg">
-              {t`A powerful, flexible kanban app that helps you organise work, track progress, and deliver results—all in one place.`}
-            </p>
-
-            <div className="mt-6 flex gap-2">
-              <Button href="/signup">{t`Get started on Cloud`}</Button>
-              <Button
-                variant="secondary"
-                href="https://github.com/kanbn/kan"
-                openInNewTab
+        <section className="border border-[#d9e0e5] bg-white">
+          <div className="border-b border-[#dfe5e9] p-6 sm:p-8">
+            <label
+              htmlFor="welcome-capture"
+              className="mb-2 block text-base font-semibold text-[#272e41]"
+            >
+              Capture
+            </label>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                id="welcome-capture"
+                type="text"
+                readOnly
+                placeholder="What needs to be done?"
+                className="h-12 flex-1 border border-[#d8dfe5] bg-white px-4 text-base text-[#4b5660] placeholder:text-[#9ca7ad] focus:border-[#32a3fd] focus:ring-[#32a3fd]"
+              />
+              <Link
+                href={isAuthenticated ? "/boards" : settings.loginUrl}
+                className="inline-flex h-12 items-center justify-center bg-[#32a3fd] px-6 text-base font-semibold text-white transition-colors hover:bg-[#168fe8]"
               >
-                {t`Self host with Github`}
-              </Button>
-            </div>
-            <p className="mt-4 text-center text-sm text-light-950 dark:text-dark-900">
-              {t`No credit card required`}
-            </p>
-          </div>
-        </div>
-        <div className="px-4 pb-10">
-          <div className="rounded-[16px] border border-light-300 bg-light-50 p-1 shadow-md dark:border-dark-300 dark:bg-dark-100 lg:rounded-[24px] lg:p-2">
-            <div className="relative overflow-hidden rounded-[12px] border border-light-300 shadow-sm dark:border-dark-300 lg:rounded-[16px]">
-              <Image
-                src={`/hero-light.png`}
-                alt="kanban"
-                width={1100}
-                height={1000}
-                className="block dark:hidden"
-              />
-              <Image
-                src={`/hero-dark.png`}
-                alt="kanban"
-                width={1100}
-                height={1000}
-                className="hidden dark:block"
-              />
+                Add task
+              </Link>
             </div>
           </div>
-        </div>
-        <Logos />
-        <div className="relative pt-10">
-          <div id="features" className="absolute -top-20" />
-          <Features theme={resolvedTheme === "dark" ? "dark" : "light"} />
-        </div>
-        <div className="relative pt-10">
-          <div id="testimonials" className="absolute -top-20" />
-          <Testimonials />
-        </div>
-        <div className="relative pt-10">
-          <div id="faq" className="absolute -top-20" />
-          <FAQs />
-        </div>
-        <div className="relative">
-          <Cta theme={resolvedTheme ?? "light"} />
-        </div>
-      </div>
-    </Layout>
+
+          <div className="p-6 sm:p-8">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold text-[#272e41]">My Tasks</h2>
+                <p className="mt-1 text-base text-[#89969d]">
+                  Capture first. Decide and organise when you are ready.
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {boardColumns.map((column) => (
+                <div key={column.name} className="bg-[#eef2f4] p-3">
+                  <div className="mb-3 flex items-center gap-2 px-1">
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${column.accent}`}
+                    />
+                    <span className="font-semibold text-[#384677]">
+                      {column.name}
+                    </span>
+                    <span className="ml-auto text-sm text-[#99a4aa]">
+                      {column.cards.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {column.cards.map((card) => (
+                      <div
+                        key={card}
+                        className="border border-[#dce2e6] bg-white p-3 text-sm font-semibold leading-5 text-[#4b5660]"
+                      >
+                        {card}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </main>
+    </HoledoPublicShell>
   );
 }

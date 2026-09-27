@@ -1,0 +1,64 @@
+services:
+  tasks-migrate:
+    image: ghcr.io/hospitalityleaders/holedo-tasks-migrate:${TASKS_IMAGE_TAG:-edge}
+    container_name: holedo-tasks-migrate
+    environment:
+      POSTGRES_URL: ${POSTGRES_URL}
+    networks:
+      - npm_proxy
+    restart: "no"
+
+  tasks-web:
+    image: ghcr.io/hospitalityleaders/holedo-tasks:${TASKS_IMAGE_TAG:-edge}
+    container_name: holedo-tasks
+    environment:
+      NEXT_PUBLIC_BASE_URL: https://tasks.holedo.com
+      BETTER_AUTH_TRUSTED_ORIGINS: https://tasks.holedo.com
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      POSTGRES_URL: ${POSTGRES_URL}
+
+      # Demo access: a user can create an account with email and password.
+      NEXT_PUBLIC_ALLOW_CREDENTIALS: "true"
+      NEXT_PUBLIC_DISABLE_SIGN_UP: "false"
+      NEXT_PUBLIC_DISABLE_EMAIL: "true"
+      NEXT_PUBLIC_WHITE_LABEL_HIDE_POWERED_BY: "true"
+
+      # Runtime presentation settings at /admin.
+      ADMIN_TOKEN: ${ADMIN_TOKEN}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
+
+      # Holedo identity: Tanish can populate these for Keycloak or another
+      # standards-compliant OIDC provider without changing the application.
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_DISCOVERY_URL: ${OIDC_DISCOVERY_URL:-}
+
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      REDIS_URL: ${REDIS_URL:-}
+
+      # Optional object storage for attachments and avatars.
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-https://gdrv6.upcloudobjects.com}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      NEXT_PUBLIC_STORAGE_URL: ${NEXT_PUBLIC_STORAGE_URL:-https://gdrv6.upcloudobjects.com}
+      NEXT_PUBLIC_STORAGE_DOMAIN: ${NEXT_PUBLIC_STORAGE_DOMAIN:-gdrv6.upcloudobjects.com}
+      NEXT_PUBLIC_AVATAR_BUCKET_NAME: ${NEXT_PUBLIC_AVATAR_BUCKET_NAME:-holedo-tasks-avatars}
+      NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME: ${NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME:-holedo-tasks-attachments}
+      NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS: ${NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS:-true}
+    depends_on:
+      tasks-migrate:
+        condition: service_completed_successfully
+    networks:
+      npm_proxy:
+        aliases:
+          - holedo-tasks
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,noexec,nosuid
+    restart: unless-stopped
+
+networks:
+  npm_proxy:
+    external: true

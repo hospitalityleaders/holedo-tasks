@@ -12,4 +12,12 @@ export interface CardDragData {
   listPublicId: string;
 }
 
-export type DragData = ListDragData | ListBodyDragData | CardDragData;
+export interface BinDropData {
+  type: "BIN";
+}
+
+export type DragData =
+  | ListDragData
+  | ListBodyDragData
+  | CardDragData
+  | BinDropData;

@@ -148,7 +148,7 @@ const availableSocialProviders = {
   },
   oidc: {
     id: "oidc",
-    name: "OIDC",
+    name: "Holedo",
     icon: FaOpenid,
   },
 };
@@ -166,7 +166,7 @@ export function Auth({
   const [isLoginWithEmailPending, setIsLoginWithEmailPending] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const { showPopup } = usePopup();
-  const oidcProviderName = "OIDC";
+  const oidcProviderName = "Holedo";
   const passwordRef = useRef<HTMLInputElement | null>(null);
 
   const redirect = useSearchParams().get("next");

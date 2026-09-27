@@ -213,9 +213,14 @@ pnpm dev
 | `NEXT_PUBLIC_DISABLE_SIGN_UP`             | Disable sign up                                           | For authentication                          | `false`                                                     |
 | `NEXT_PUBLIC_WHITE_LABEL_HIDE_POWERED_BY` | Hide “Powered by kan.bn” on public boards (self-host)     | For white labelling                         | `true`                                                      |
 | `KAN_ADMIN_API_KEY`                       | Admin API key for stats and admin endpoints               | For admin/monitoring                        | `your-secret-admin-key`                                     |
+| `ADMIN_TOKEN`                             | Token protecting the Holedo Tasks runtime settings panel  | For `/admin`                                | `your-secret-admin-token`                                   |
+| `ADMIN_SESSION_SECRET`                    | Secret signing the Holedo Tasks admin session cookie      | For `/admin`                                | Random 32+ char string                                      |
 | `LOG_LEVEL`                               | Log verbosity level (debug, info, warn, error)            | No (defaults to debug in dev, info in prod) | `info`                                                      |
 
 See `.env.example` for a complete list of supported environment variables.
+
+For the Holedo-branded Portainer deployment, demo login and OIDC handoff, see
+[HOLEDO_TASKS.md](./HOLEDO_TASKS.md).
 
 ## MCP Server (AI Control) 🤖
 

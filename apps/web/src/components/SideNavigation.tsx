@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Button } from "@headlessui/react";
@@ -161,9 +162,18 @@ export default function SideNavigation({
         <div>
           <div className="hidden h-[45px] items-center justify-between pb-3 md:flex">
             {!isCollapsed && (
-              <Link href="/" className="block">
-                <h1 className="pl-2 text-[16px] font-bold tracking-tight text-neutral-900 dark:text-dark-1000">
-                  kan.bn
+              <Link href="/" className="flex items-center gap-2 pl-2">
+                <span className="flex h-8 w-9 items-center justify-center rounded bg-[#384677] px-1">
+                  <Image
+                    src="/assets/branding/holedo-icon.png"
+                    alt="Holedo"
+                    width={34}
+                    height={22}
+                    className="h-auto w-full"
+                  />
+                </span>
+                <h1 className="text-[17px] font-bold tracking-tight text-[#272e41] dark:text-dark-1000">
+                  Tasks
                 </h1>
               </Link>
             )}

@@ -11,6 +11,21 @@ export const cardCreateResponseSchema = z.object({
   publicId: z.string(),
 });
 
+export const archivedCardSchema = z.object({
+  publicId: z.string(),
+  title: z.string(),
+  description: z.string().nullable(),
+  dueDate: z.date().nullable(),
+  deletedAt: z.date(),
+  listPublicId: z.string(),
+  listName: z.string(),
+  listIndex: z.number(),
+});
+
+export const cardRestoreResponseSchema = z.object({
+  publicId: z.string(),
+});
+
 // ─── card.update ─────────────────────────────────────────────
 export const cardUpdateResponseSchema = z.object({
   publicId: z.string(),
