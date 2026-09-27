@@ -1,7 +1,6 @@
 import { HeadBucketCommand } from "@aws-sdk/client-s3";
 import { TRPCError } from "@trpc/server";
 import { sql } from "drizzle-orm";
-import { env } from "next-runtime-env";
 import { z } from "zod";
 
 import type { dbClient } from "@kan/db/client";
@@ -18,13 +17,17 @@ import * as listRepo from "@kan/db/repository/list.repo";
 import * as memberRepo from "@kan/db/repository/member.repo";
 import * as userRepo from "@kan/db/repository/user.repo";
 import * as workspaceRepo from "@kan/db/repository/workspace.repo";
+import {
+  createS3Client,
+  getAttachmentsBucketName,
+  getAvatarBucketName,
+} from "@kan/shared/utils";
 
 import {
   adminProtectedProcedure,
   createTRPCRouter,
   publicProcedure,
 } from "../trpc";
-import { createS3Client } from "@kan/shared/utils";
 
 const checkDatabaseConnection = async (db: dbClient) => {
   try {
@@ -48,8 +51,8 @@ const checkS3Connection = async () => {
     }
 
     const client = createS3Client();
-    const avatarBucketName = env("NEXT_PUBLIC_AVATAR_BUCKET_NAME");
-    const attachmentsBucketName = env("NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME");
+    const avatarBucketName = getAvatarBucketName();
+    const attachmentsBucketName = getAttachmentsBucketName();
 
     await client.send(new HeadBucketCommand({ Bucket: avatarBucketName }));
     await client.send(new HeadBucketCommand({ Bucket: attachmentsBucketName }));

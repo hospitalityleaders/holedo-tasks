@@ -5,7 +5,6 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { env } from "next-runtime-env";
 
 export function createS3Client() {
   const region =
@@ -31,6 +30,16 @@ export function createS3Client() {
     credentials,
   });
 }
+
+export const getAvatarBucketName = () =>
+  process.env.S3_AVATAR_BUCKET ??
+  process.env.NEXT_PUBLIC_AVATAR_BUCKET_NAME ??
+  "";
+
+export const getAttachmentsBucketName = () =>
+  process.env.S3_ATTACHMENTS_BUCKET ??
+  process.env.NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME ??
+  "";
 
 export async function generateUploadUrl(
   bucket: string,
@@ -95,7 +104,7 @@ export async function generateAvatarUrl(
     return imageKey;
   }
 
-  const bucket = env("NEXT_PUBLIC_AVATAR_BUCKET_NAME");
+  const bucket = getAvatarBucketName();
   if (!bucket) {
     return null;
   }
@@ -120,7 +129,7 @@ export async function generateAttachmentUrl(
     return null;
   }
 
-  const bucket = env("NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME");
+  const bucket = getAttachmentsBucketName();
   if (!bucket) {
     return null;
   }
