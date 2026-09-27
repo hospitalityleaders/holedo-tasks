@@ -1,6 +1,6 @@
 services:
   tasks-migrate:
-    image: ghcr.io/hospitalityleaders/holedo-tasks-migrate:${TASKS_IMAGE_TAG:-latest}
+    image: ghcr.io/hospitalityleaders/holedo-tasks-migrate:${TASKS_IMAGE_TAG:-edge}
     container_name: holedo-tasks-migrate
     environment:
       POSTGRES_URL: ${POSTGRES_URL}
@@ -9,7 +9,7 @@ services:
     restart: "no"
 
   tasks-web:
-    image: ghcr.io/hospitalityleaders/holedo-tasks:${TASKS_IMAGE_TAG:-latest}
+    image: ghcr.io/hospitalityleaders/holedo-tasks:${TASKS_IMAGE_TAG:-edge}
     container_name: holedo-tasks
     environment:
       NEXT_PUBLIC_BASE_URL: https://tasks.holedo.com
@@ -40,13 +40,13 @@ services:
       S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
       S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
       S3_REGION: ${S3_REGION:-}
-      S3_ENDPOINT: ${S3_ENDPOINT:-}
-      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-}
-      NEXT_PUBLIC_STORAGE_URL: ${NEXT_PUBLIC_STORAGE_URL:-}
-      NEXT_PUBLIC_STORAGE_DOMAIN: ${NEXT_PUBLIC_STORAGE_DOMAIN:-}
-      NEXT_PUBLIC_AVATAR_BUCKET_NAME: ${NEXT_PUBLIC_AVATAR_BUCKET_NAME:-}
-      NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME: ${NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME:-}
-      NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS: ${NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS:-}
+      S3_ENDPOINT: ${S3_ENDPOINT:-https://gdrv6.upcloudobjects.com}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-false}
+      NEXT_PUBLIC_STORAGE_URL: ${NEXT_PUBLIC_STORAGE_URL:-https://gdrv6.upcloudobjects.com}
+      NEXT_PUBLIC_STORAGE_DOMAIN: ${NEXT_PUBLIC_STORAGE_DOMAIN:-gdrv6.upcloudobjects.com}
+      NEXT_PUBLIC_AVATAR_BUCKET_NAME: ${NEXT_PUBLIC_AVATAR_BUCKET_NAME:-holedo-tasks-avatars}
+      NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME: ${NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME:-holedo-tasks-attachments}
+      NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS: ${NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS:-true}
     depends_on:
       tasks-migrate:
         condition: service_completed_successfully
