@@ -45,6 +45,7 @@ vi.mock("@kan/shared/utils", () => ({
   generateAttachmentUrl: vi.fn(),
   generateAvatarUrl: vi.fn(),
   normalizeDescription: vi.fn((description: string) => description),
+  workspacePlans: ["free", "team", "pro", "enterprise"],
 }));
 vi.mock("../utils/notifications", () => ({
   sendMentionEmails: vi.fn(),
