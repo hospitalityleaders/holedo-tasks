@@ -61,15 +61,10 @@ services:
 
       # UpCloud Managed Object Storage (user: holedo_tasks)
       S3_ENDPOINT: "https://gdrv6.upcloudobjects.com"
-      S3_REGION: "______________________"
+      S3_AVATAR_BUCKET: "holedo-tasks-avatars"
+      S3_ATTACHMENTS_BUCKET: "holedo-tasks-attachments"
       S3_ACCESS_KEY_ID: "A________________________"
       S3_SECRET_ACCESS_KEY: "____________________________"
-      S3_FORCE_PATH_STYLE: "false"
-      NEXT_PUBLIC_STORAGE_URL: "https://gdrv6.upcloudobjects.com"
-      NEXT_PUBLIC_STORAGE_DOMAIN: "gdrv6.upcloudobjects.com"
-      NEXT_PUBLIC_AVATAR_BUCKET_NAME: "holedo-tasks-avatars"
-      NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME: "holedo-tasks-attachments"
-      NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS: "true"
     depends_on:
       tasks-migrate:
         condition: service_completed_successfully

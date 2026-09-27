@@ -49,12 +49,13 @@ access to the S3 endpoint enabled so signed image and download URLs work, but do
 not make either bucket anonymously readable. The current UI proxies uploads
 through Tasks, so bucket CORS is not required for the first deployment.
 
-Replace the underscored database password, S3 region, S3 access key, S3 secret
-key, Better Auth secret, admin token and admin-session secret directly in
+Replace the underscored database password, S3 access key, S3 secret key,
+authentication secret, admin token and admin-session secret directly in
 Portainer's copy of the YAML.
 
-The endpoint, storage domain, virtual-hosted addressing, storage username and
-both bucket names are already recorded in `compose.holedo.production.yml`.
+The endpoint, storage username and both bucket names are already recorded in
+`compose.holedo.production.yml`. Provider-specific addressing and region
+defaults are handled inside the application rather than exposed in the stack.
 
 Redis/Valkey is optional for this single-container demo. Without `REDIS_URL`,
 rate limiting uses the process's in-memory store. Configure Managed Valkey only

@@ -10,7 +10,7 @@ import * as userRepo from "@kan/db/repository/user.repo";
 import * as workspaceRepo from "@kan/db/repository/workspace.repo";
 import { createSubscriber, triggerSubscriberWorkflow } from "@kan/email";
 import { createLogger } from "@kan/logger";
-import { createS3Client, generateUID } from "@kan/shared";
+import { createS3Client, generateUID, getAvatarBucketName } from "@kan/shared";
 
 import { downloadImage } from "./utils";
 
@@ -109,12 +109,10 @@ export function createDatabaseHooks(db: dbClient) {
             );
           }
 
-          let avatarKey = user.image;
-          const storageDomain = process.env.NEXT_PUBLIC_STORAGE_DOMAIN;
           if (
             user.image &&
-            storageDomain &&
-            !user.image.includes(storageDomain)
+            (user.image.startsWith("http://") ||
+              user.image.startsWith("https://"))
           ) {
             try {
               const client = createS3Client();
@@ -129,15 +127,12 @@ export function createDatabaseHooks(db: dbClient) {
 
               await client.send(
                 new PutObjectCommand({
-                  Bucket: env("NEXT_PUBLIC_AVATAR_BUCKET_NAME") ?? "",
+                  Bucket: getAvatarBucketName(),
                   Key: key,
                   Body: imageBuffer,
                   ContentType: `image/${!allowedFileExtensions.includes(fileExtension) ? "jpeg" : fileExtension}`,
-                  ACL: "public-read",
                 }),
               );
-
-              avatarKey = key;
 
               await userRepo.update(db, user.id, {
                 image: key,
@@ -153,9 +148,11 @@ export function createDatabaseHooks(db: dbClient) {
           const lastName = rest.length ? rest.join(" ") : undefined;
 
           try {
-            const avatarUrl = avatarKey
-              ? `${env("NEXT_PUBLIC_STORAGE_URL")}/${env("NEXT_PUBLIC_AVATAR_BUCKET_NAME")}/${avatarKey}`
-              : undefined;
+            const avatarUrl =
+              user.image?.startsWith("http://") ||
+              user.image?.startsWith("https://")
+                ? user.image
+                : undefined;
 
             await createSubscriber({
               publicId: user.id,

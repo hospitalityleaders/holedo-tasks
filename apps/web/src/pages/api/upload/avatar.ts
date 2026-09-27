@@ -5,9 +5,7 @@ import { createNextApiContext } from "@kan/api/trpc-context";
 import { withApiLogging } from "@kan/api/utils/apiLogging";
 import { withRateLimit } from "@kan/api/utils/rateLimit";
 import * as userRepo from "@kan/db/repository/user.repo";
-import { createS3Client } from "@kan/shared/utils";
-
-import { env } from "~/env";
+import { createS3Client, getAvatarBucketName } from "@kan/shared/utils";
 
 const MAX_SIZE_BYTES = parseInt(
   process.env.S3_AVATAR_UPLOAD_LIMIT || "2097152",
@@ -35,7 +33,7 @@ export default withRateLimit(
         return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const bucket = env.NEXT_PUBLIC_AVATAR_BUCKET_NAME;
+      const bucket = getAvatarBucketName();
       if (!bucket) {
         return res.status(500).json({ error: "Avatar bucket not configured" });
       }

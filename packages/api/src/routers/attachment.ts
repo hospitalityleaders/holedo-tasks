@@ -5,12 +5,16 @@ import * as cardRepo from "@kan/db/repository/card.repo";
 import * as cardActivityRepo from "@kan/db/repository/cardActivity.repo";
 import * as cardAttachmentRepo from "@kan/db/repository/cardAttachment.repo";
 import * as workspaceRepo from "@kan/db/repository/workspace.repo";
-import { generateUID } from "@kan/shared/utils";
+import {
+  deleteObject,
+  generateUID,
+  generateUploadUrl,
+  getAttachmentsBucketName,
+} from "@kan/shared/utils";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { attachmentConfirmResponseSchema } from "../schemas";
+import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { assertPermission } from "../utils/permissions";
-import { deleteObject, generateUploadUrl } from "@kan/shared/utils";
 
 export const attachmentRouter = createTRPCRouter({
   generateUploadUrl: protectedProcedure
@@ -66,7 +70,7 @@ export const attachmentRouter = createTRPCRouter({
           code: "NOT_FOUND",
         });
 
-      const bucket = process.env.NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME;
+      const bucket = getAttachmentsBucketName();
       if (!bucket)
         throw new TRPCError({
           message: `Attachments bucket not configured`,
@@ -196,7 +200,7 @@ export const attachmentRouter = createTRPCRouter({
       const workspaceId = attachment.card.list.board.workspaceId;
       await assertPermission(ctx.db, userId, workspaceId, "card:edit");
 
-      const bucket = process.env.NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME;
+      const bucket = getAttachmentsBucketName();
       if (bucket) {
         try {
           await deleteObject(bucket, attachment.s3Key);
