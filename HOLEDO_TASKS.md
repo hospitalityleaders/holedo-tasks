@@ -6,16 +6,11 @@ Portainer, and a token-protected presentation panel at `/admin`.
 
 ## Demo deployment
 
-Use `compose.holedo.production.yml` as the Portainer stack. Configure these
-required stack variables:
-
-- `POSTGRES_URL`: the managed PostgreSQL connection string.
-- `BETTER_AUTH_SECRET`: a random secret of at least 32 characters.
-- `ADMIN_TOKEN`: the token used to open `/admin`.
-- `ADMIN_SESSION_SECRET`: a second random secret used to sign the eight-hour
-  admin session cookie.
-- `TASKS_IMAGE_TAG`: optional; defaults to `edge`, the image published from the
-  default branch. Change it to `latest` after the first tagged release.
+Use `compose.holedo.production.yml` as the Portainer stack. Like the Office
+stack, its database, storage, image and secret settings are written directly
+into the YAML. Replace each underscored placeholder inside Portainer's private
+YAML editor before deployment. No Portainer stack environment variables are
+required.
 
 The supplied demo configuration enables email-and-password accounts and turns
 email delivery off. Visit `/signup` once to create the demonstration user. A
@@ -36,12 +31,10 @@ In the existing Managed PostgreSQL service, create:
 
 The migration image creates the application tables and enables `uuid-ossp` and
 `pg_trgm`; both extensions are supported by UpCloud Managed PostgreSQL. Use the
-private database hostname and the existing assigned port. The Portainer value
-has this form:
-
-```text
-POSTGRES_URL=postgresql://holedo_tasks:<URL-ENCODED-PASSWORD>@holedo-postgresql-production-gympboioheqo.db.upclouddatabases.com:11569/holedo_tasks?sslmode=require
-```
+private database hostname and the existing assigned port. Tasks accepts the
+same split `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`
+and `DB_SSL_REJECT_UNAUTHORIZED` fields as Office, so the password does not need
+URL encoding.
 
 In the existing Managed Object Storage instance at
 `https://gdrv6.upcloudobjects.com`, create two private buckets:
@@ -49,28 +42,19 @@ In the existing Managed Object Storage instance at
 - `holedo-tasks-avatars`
 - `holedo-tasks-attachments`
 
-Create a separate Object Storage user named `holedo-tasks-app`, grant it read,
+Use the separate Object Storage user named `holedo_tasks`, grant it read,
 write, list, and delete access to those two buckets, and generate a dedicated
 access-key pair. Do not reuse the Office application keys. Keep public network
 access to the S3 endpoint enabled so signed image and download URLs work, but do
 not make either bucket anonymously readable. The current UI proxies uploads
 through Tasks, so bucket CORS is not required for the first deployment.
 
-Add these stack variables in Portainer:
+Replace the underscored database password, S3 region, S3 access key, S3 secret
+key, Better Auth secret, admin token and admin-session secret directly in
+Portainer's copy of the YAML.
 
-```text
-POSTGRES_URL=<the connection URI above>
-S3_ACCESS_KEY_ID=<holedo-tasks-app access key>
-S3_SECRET_ACCESS_KEY=<holedo-tasks-app secret key>
-S3_REGION=<the region shown on the UpCloud Object Storage overview>
-```
-
-The endpoint, storage domain, virtual-hosted addressing, and bucket names are
-already defaulted in `compose.holedo.production.yml`. They can still be
-overridden with `S3_ENDPOINT`, `NEXT_PUBLIC_STORAGE_URL`,
-`NEXT_PUBLIC_STORAGE_DOMAIN`, `S3_FORCE_PATH_STYLE`,
-`NEXT_PUBLIC_USE_VIRTUAL_HOSTED_URLS`, `NEXT_PUBLIC_AVATAR_BUCKET_NAME`, and
-`NEXT_PUBLIC_ATTACHMENTS_BUCKET_NAME` if the UpCloud instance changes.
+The endpoint, storage domain, virtual-hosted addressing, storage username and
+both bucket names are already recorded in `compose.holedo.production.yml`.
 
 Redis/Valkey is optional for this single-container demo. Without `REDIS_URL`,
 rate limiting uses the process's in-memory store. Configure Managed Valkey only

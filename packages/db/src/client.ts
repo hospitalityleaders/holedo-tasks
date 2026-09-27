@@ -9,6 +9,7 @@ import { Pool } from "pg";
 
 import { createLogger } from "@kan/logger";
 
+import { resolvePostgresUrl } from "./postgres-url";
 import * as schema from "./schema";
 
 const log = createLogger("db");
@@ -20,10 +21,10 @@ export type dbClient = NodePgDatabase<typeof schema> & {
 };
 
 export const createDrizzleClient = (): dbClient => {
-  const connectionString = process.env.POSTGRES_URL;
+  const connectionString = resolvePostgresUrl();
 
   if (!connectionString) {
-    log.warn("POSTGRES_URL not set, falling back to PGLite");
+    log.warn("PostgreSQL configuration not set, falling back to PGLite");
 
     const client = new PGlite({
       dataDir: "./pgdata",
