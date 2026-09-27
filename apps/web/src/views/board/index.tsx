@@ -59,6 +59,8 @@ import { formatToArray, isPlaceholderPublicId } from "~/utils/helpers";
 import { DeleteCardConfirmation } from "~/views/card/components/DeleteCardConfirmation";
 import BoardDropdown from "./components/BoardDropdown";
 import CalendarView from "./components/CalendarView";
+import { CaptureBar } from "./components/CaptureBar";
+import { CapturePanel } from "./components/CapturePanel";
 import { CardContextDueDateModal } from "./components/CardContextDueDateModal";
 import { CardContextDuplicateModal } from "./components/CardContextDuplicateModal";
 import { CardContextLabelsModal } from "./components/CardContextLabelsModal";
@@ -75,10 +77,12 @@ import { MoveBoardForm } from "./components/MoveBoardForm";
 import { NewCardForm } from "./components/NewCardForm";
 import { NewListForm } from "./components/NewListForm";
 import { NewTemplateForm } from "./components/NewTemplateForm";
+import { TaskBin } from "./components/TaskBin";
 import { UpdateBoardSlugForm } from "./components/UpdateBoardSlugForm";
 import ViewToggle from "./components/ViewToggle";
 import VisibilityButton from "./components/VisibilityButton";
 import { createBoardCollisionDetection } from "./dnd/collision";
+import { getCaptureList, getWorkflowLists } from "./task-board";
 
 type PublicListId = string;
 
@@ -119,6 +123,7 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
     canEditCard,
     canEditBoard,
     canCreateCard,
+    canDeleteCard,
   } = usePermissions();
 
   const boardId = params?.boardId
@@ -346,6 +351,52 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
     },
   });
 
+  const archiveCardMutation = api.card.delete.useMutation({
+    onMutate: async (args) => {
+      await utils.board.byId.cancel(queryParams);
+      const previousState = utils.board.byId.getData(queryParams);
+
+      utils.board.byId.setData(queryParams, (oldBoard) => {
+        if (!oldBoard) return oldBoard;
+
+        return {
+          ...oldBoard,
+          lists: oldBoard.lists.map((list) => ({
+            ...list,
+            cards: list.cards
+              .filter((card) => card.publicId !== args.cardPublicId)
+              .map((card, index) => ({ ...card, index })),
+          })),
+        };
+      });
+
+      return { previousState };
+    },
+    onError: (_error, _args, context) => {
+      utils.board.byId.setData(queryParams, context?.previousState);
+      showPopup({
+        header: t`Unable to move task to the Bin`,
+        message: t`Please try again later, or contact customer support.`,
+        icon: "error",
+      });
+    },
+    onSuccess: () => {
+      showPopup({
+        header: t`Moved to Bin`,
+        message: t`You can restore the task from the Bin at any time.`,
+        icon: "success",
+      });
+    },
+    onSettled: async () => {
+      await Promise.all([
+        utils.board.byId.invalidate(queryParams),
+        boardId
+          ? utils.card.archivedByBoard.invalidate({ boardPublicId: boardId })
+          : Promise.resolve(),
+      ]);
+    },
+  });
+
   const updateCardDueDateMutation = api.card.update.useMutation({
     onMutate: async (args) => {
       await utils.board.byId.cancel();
@@ -495,11 +546,16 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
     () => dragListOrder ?? boardData?.lists ?? [],
     [dragListOrder, boardData?.lists],
   );
+  const captureList = useMemo(() => getCaptureList(lists), [lists]);
+  const workflowLists = useMemo(() => getWorkflowLists(lists), [lists]);
   // See the comment in CardList.tsx: dnd-kit disables the reflow
   // transition for a frame whenever the items array reference changes, so
   // this needs to stay stable across renders that don't actually reorder
   // the lists.
-  const listIds = useMemo(() => lists.map((list) => list.publicId), [lists]);
+  const listIds = useMemo(
+    () => workflowLists.map((list) => list.publicId),
+    [workflowLists],
+  );
 
   const collisionDetectionStrategy: CollisionDetection = useMemo(
     () => createBoardCollisionDetection(lastOverIdRef),
@@ -535,6 +591,8 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
     if (activeData?.type !== "CARD") return;
 
     const overData = getEventData(over);
+    if (overData?.type === "BIN") return;
+
     const destListPublicId =
       overData?.type === "CARD" || overData?.type === "LIST_BODY"
         ? overData.listPublicId
@@ -634,6 +692,15 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
       }
 
       const overData = getEventData(over);
+
+      if (overData?.type === "BIN") {
+        setDragCardsByList(null);
+        if (canDeleteCard) {
+          archiveCardMutation.mutate({ cardPublicId: activeIdStr });
+        }
+        return;
+      }
+
       const destListPublicId =
         overData?.type === "CARD" || overData?.type === "LIST_BODY"
           ? overData.listPublicId
@@ -899,7 +966,9 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
             {!isTemplate && (
               <>
                 <VisibilityButton
-                  visibility={boardData?.visibility ?? "private"}
+                  visibility={
+                    boardData?.visibility === "public" ? "public" : "private"
+                  }
                   boardPublicId={boardId ?? ""}
                   boardSlug={boardData?.slug ?? ""}
                   queryParams={queryParams}
@@ -951,6 +1020,18 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
           </div>
         </div>
 
+        {boardData && !isTemplate && (
+          <CaptureBar
+            listPublicId={
+              getCaptureList(boardData.allLists)?.publicId ??
+              captureList?.publicId ??
+              boardData.lists[0]?.publicId
+            }
+            queryParams={queryParams}
+            canCreateCard={!!canCreateCard && !isFreeCloudPlan}
+          />
+        )}
+
         {view === "calendar" ? (
           boardData && (
             <CalendarView
@@ -969,66 +1050,87 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
             />
           )
         ) : (
-          <div
-            ref={scrollRef}
-            onMouseDown={onMouseDown}
-            className={`scrollbar-w-none scrollbar-track-rounded-[4px] scrollbar-thumb-rounded-[4px] scrollbar-h-[8px] z-0 flex-1 snap-x snap-mandatory scroll-pl-[10px] overflow-y-hidden overflow-x-scroll overscroll-contain scrollbar scrollbar-track-light-200 scrollbar-thumb-light-400 dark:scrollbar-track-dark-100 dark:scrollbar-thumb-dark-300 md:snap-none`}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collisionDetectionStrategy}
+            autoScroll={{ canScroll }}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
           >
-            {isLoading ? (
-              <div className="ml-[2rem] flex">
-                <div className="0 mr-5 h-[500px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
-                <div className="0 mr-5 h-[275px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
-                <div className="0 mr-5 h-[375px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
-              </div>
-            ) : boardData ? (
-              <>
-                {boardData.lists.length === 0 ? (
-                  <div className="z-10 flex h-full w-full flex-col items-center justify-center space-y-8 pb-[150px]">
-                    <div className="flex flex-col items-center">
-                      <HiOutlineSquare3Stack3D className="h-10 w-10 text-light-800 dark:text-dark-800" />
-                      <p className="mb-2 mt-4 text-[14px] font-bold text-light-1000 dark:text-dark-950">
-                        {t`No lists`}
-                      </p>
-                      <p className="text-[14px] text-light-900 dark:text-dark-900">
-                        {canCreateList
-                          ? t`Get started by creating a new list`
-                          : t`No lists have been created yet`}
-                      </p>
-                    </div>
-                    <Tooltip
-                      content={
-                        !canCreateList
-                          ? t`You don't have permission`
-                          : undefined
-                      }
-                    >
-                      <Button
-                        onClick={() => {
-                          if (boardId && canCreateList)
-                            openNewListForm(boardId);
-                        }}
-                        disabled={!canCreateList}
-                      >
-                        {t`Create new list`}
-                      </Button>
-                    </Tooltip>
+            <div className="flex min-h-0 flex-1 flex-col">
+              {boardData && captureList && (
+                <CapturePanel
+                  list={captureList}
+                  cards={cardsByList[captureList.publicId] ?? captureList.cards}
+                  cardPrefix={boardData.workspace.cardPrefix}
+                  canEditCard={!!canEditCard}
+                  getCardHref={(cardPublicId) =>
+                    isTemplate
+                      ? `/templates/${boardId}/cards/${cardPublicId}${cardReturnQuery}`
+                      : `/cards/${cardPublicId}${cardReturnQuery}`
+                  }
+                  onContextMenu={(e, cardPublicId) => {
+                    setContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      cardPublicId,
+                    });
+                  }}
+                />
+              )}
+
+              <div
+                ref={scrollRef}
+                onMouseDown={onMouseDown}
+                className="scrollbar-w-none scrollbar-track-rounded-[4px] scrollbar-thumb-rounded-[4px] scrollbar-h-[8px] z-0 min-h-0 flex-1 snap-x snap-mandatory scroll-pl-[10px] overflow-y-hidden overflow-x-scroll overscroll-contain scrollbar scrollbar-track-light-200 scrollbar-thumb-light-400 dark:scrollbar-track-dark-100 dark:scrollbar-thumb-dark-300 md:snap-none"
+              >
+                {isLoading ? (
+                  <div className="ml-[2rem] flex">
+                    <div className="mr-5 h-[500px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
+                    <div className="mr-5 h-[275px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
+                    <div className="mr-5 h-[375px] w-[18rem] animate-pulse rounded-md bg-light-200 dark:bg-dark-100" />
                   </div>
-                ) : (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={collisionDetectionStrategy}
-                    autoScroll={{ canScroll }}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOver}
-                    onDragEnd={handleDragEnd}
-                  >
+                ) : boardData ? (
+                  workflowLists.length === 0 ? (
+                    <div className="z-10 flex h-full w-full flex-col items-center justify-center space-y-8 pb-12">
+                      <div className="flex flex-col items-center">
+                        <HiOutlineSquare3Stack3D className="h-10 w-10 text-light-800 dark:text-dark-800" />
+                        <p className="mb-2 mt-4 text-[14px] font-bold text-light-1000 dark:text-dark-950">
+                          {t`No workflow lists`}
+                        </p>
+                        <p className="text-[14px] text-light-900 dark:text-dark-900">
+                          {canCreateList
+                            ? t`Create a list to organise captured tasks`
+                            : t`No workflow lists have been created yet`}
+                        </p>
+                      </div>
+                      <Tooltip
+                        content={
+                          !canCreateList
+                            ? t`You don't have permission`
+                            : undefined
+                        }
+                      >
+                        <Button
+                          onClick={() => {
+                            if (boardId && canCreateList)
+                              openNewListForm(boardId);
+                          }}
+                          disabled={!canCreateList}
+                        >
+                          {t`Create new list`}
+                        </Button>
+                      </Tooltip>
+                    </div>
+                  ) : (
                     <SortableContext
                       items={listIds}
                       strategy={horizontalListSortingStrategy}
                     >
                       <div className="flex w-max">
                         <div className="min-w-[10px] md:min-w-[2rem]" />
-                        {lists.map((list) => (
+                        {workflowLists.map((list) => (
                           <List
                             key={`list.${list.publicId}`}
                             list={list}
@@ -1061,25 +1163,29 @@ export default function BoardPage({ isTemplate }: { isTemplate?: boolean }) {
                         <div className="min-w-[calc(100vw-18rem)] md:min-w-[0.75rem]" />
                       </div>
                     </SortableContext>
-                    <DragOverlay dropAnimation={activeCard ? undefined : null}>
-                      {activeCard ? (
-                        <div
-                          style={
-                            activeWidth ? { width: activeWidth } : undefined
-                          }
-                        >
-                          <CardPreview
-                            card={activeCard}
-                            cardPrefix={boardData.workspace.cardPrefix}
-                          />
-                        </div>
-                      ) : null}
-                    </DragOverlay>
-                  </DndContext>
-                )}
-              </>
-            ) : null}
-          </div>
+                  )
+                ) : null}
+              </div>
+
+              {boardData && !isTemplate && boardId && (
+                <TaskBin
+                  boardPublicId={boardId}
+                  isDraggingCard={activeCard !== null}
+                  canRestore={!!canDeleteCard}
+                />
+              )}
+            </div>
+            <DragOverlay dropAnimation={activeCard ? undefined : null}>
+              {activeCard && boardData ? (
+                <div style={activeWidth ? { width: activeWidth } : undefined}>
+                  <CardPreview
+                    card={activeCard}
+                    cardPrefix={boardData.workspace.cardPrefix}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
         )}
         {contextMenu && (
           <CardContextMenu

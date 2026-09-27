@@ -8,6 +8,8 @@ export {
 
 export {
   cardCreateResponseSchema,
+  archivedCardSchema,
+  cardRestoreResponseSchema,
   cardUpdateResponseSchema,
   cardDetailSchema,
   commentResponseSchema,

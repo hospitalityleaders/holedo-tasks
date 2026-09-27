@@ -6,12 +6,14 @@ import {
   eq,
   gt,
   inArray,
+  isNotNull,
   isNull,
   sql,
 } from "drizzle-orm";
 
 import type { dbClient } from "@kan/db/client";
 import {
+  boards,
   cardActivities,
   cardAttachments,
   cards,
@@ -269,6 +271,125 @@ export const getByPublicId = (db: dbClient, cardPublicId: string) => {
       },
     },
     where: eq(cards.publicId, cardPublicId),
+  });
+};
+
+export const getArchivedByBoardPublicId = async (
+  db: dbClient,
+  boardPublicId: string,
+) => {
+  const archivedCards = await db
+    .select({
+      publicId: cards.publicId,
+      title: cards.title,
+      description: cards.description,
+      dueDate: cards.dueDate,
+      deletedAt: cards.deletedAt,
+      listPublicId: lists.publicId,
+      listName: lists.name,
+      listIndex: lists.index,
+    })
+    .from(cards)
+    .innerJoin(lists, eq(cards.listId, lists.id))
+    .innerJoin(boards, eq(lists.boardId, boards.id))
+    .where(
+      and(
+        eq(boards.publicId, boardPublicId),
+        isNotNull(cards.deletedAt),
+        isNull(lists.deletedAt),
+        isNull(boards.deletedAt),
+      ),
+    )
+    .orderBy(asc(lists.index), desc(cards.deletedAt));
+
+  // The SQL predicate guarantees this value is present. Preserve that
+  // guarantee in the inferred return type used by the API output schema.
+  return archivedCards.map((card) => {
+    if (!card.deletedAt) {
+      throw new Error(`Archived card ${card.publicId} has no deletion date`);
+    }
+
+    return { ...card, deletedAt: card.deletedAt };
+  });
+};
+
+export const getArchivedCardContextByPublicId = async (
+  db: dbClient,
+  cardPublicId: string,
+) => {
+  const [result] = await db
+    .select({
+      id: cards.id,
+      createdBy: cards.createdBy,
+      workspaceId: boards.workspaceId,
+      boardPublicId: boards.publicId,
+      listId: lists.id,
+    })
+    .from(cards)
+    .innerJoin(lists, eq(cards.listId, lists.id))
+    .innerJoin(boards, eq(lists.boardId, boards.id))
+    .where(
+      and(
+        eq(cards.publicId, cardPublicId),
+        isNotNull(cards.deletedAt),
+        isNull(lists.deletedAt),
+        isNull(boards.deletedAt),
+      ),
+    );
+
+  return result;
+};
+
+export const restore = async (
+  db: dbClient,
+  args: { cardId: number; restoredBy: string },
+) => {
+  return db.transaction(async (tx) => {
+    const archivedCard = await tx.query.cards.findFirst({
+      columns: { id: true, listId: true },
+      where: and(eq(cards.id, args.cardId), isNotNull(cards.deletedAt)),
+    });
+
+    if (!archivedCard) {
+      throw new Error(`Unable to restore card ID ${args.cardId}`);
+    }
+
+    const lastCard = await tx.query.cards.findFirst({
+      columns: { index: true },
+      where: and(
+        eq(cards.listId, archivedCard.listId),
+        isNull(cards.deletedAt),
+      ),
+      orderBy: desc(cards.index),
+    });
+
+    const [restoredCard] = await tx
+      .update(cards)
+      .set({
+        deletedAt: null,
+        deletedBy: null,
+        index: (lastCard?.index ?? -1) + 1,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(cards.id, args.cardId), isNotNull(cards.deletedAt)))
+      .returning({
+        id: cards.id,
+        publicId: cards.publicId,
+        listId: cards.listId,
+      });
+
+    if (!restoredCard) {
+      throw new Error(`Unable to restore card ID ${args.cardId}`);
+    }
+
+    await tx.insert(cardActivities).values({
+      publicId: generateUID(),
+      cardId: restoredCard.id,
+      type: "card.restored",
+      createdBy: args.restoredBy,
+    });
+
+    return restoredCard;
   });
 };
 

@@ -2,12 +2,12 @@ import { t } from "@lingui/core/macro";
 import { useEffect, useRef } from "react";
 import {
   HiLink,
+  HiOutlineArrowRightCircle,
   HiOutlineCalendar,
   HiOutlineDocumentDuplicate,
   HiOutlineTag,
   HiOutlineTrash,
   HiOutlineUserGroup,
-  HiOutlineArrowRightCircle,
 } from "react-icons/hi2";
 
 export type CardContextMenuAction =
@@ -71,7 +71,7 @@ const MENU_ITEMS: {
   },
   {
     action: "delete",
-    label: t`Delete card`,
+    label: t`Move task to Bin`,
     icon: <HiOutlineTrash className="h-4 w-4 shrink-0" />,
     requiresEdit: true,
   },

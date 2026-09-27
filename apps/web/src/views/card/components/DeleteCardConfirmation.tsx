@@ -48,7 +48,7 @@ export function DeleteCardConfirmation({
     onError: (_error, _newList, context) => {
       utils.board.byId.setData(queryParams, context?.previousState);
       showPopup({
-        header: t`Unable to delete card`,
+        header: t`Unable to move task to the Bin`,
         message: t`Please try again later, or contact customer support.`,
         icon: "error",
       });
@@ -58,7 +58,10 @@ export function DeleteCardConfirmation({
     },
     onSettled: async () => {
       closeModal();
-      await utils.board.byId.invalidate(queryParams);
+      await Promise.all([
+        utils.board.byId.invalidate(queryParams),
+        utils.card.archivedByBoard.invalidate({ boardPublicId }),
+      ]);
     },
   });
 
@@ -72,10 +75,10 @@ export function DeleteCardConfirmation({
     <div className="p-5">
       <div className="flex w-full flex-col justify-between pb-4">
         <h2 className="text-md pb-4 font-medium text-neutral-900 dark:text-dark-1000">
-          {t`Are you sure you want to delete this card?`}
+          {t`Move this task to the Bin?`}
         </h2>
         <p className="text-sm font-medium text-light-900 dark:text-dark-900">
-          {t`This action can't be undone.`}
+          {t`You can restore it to this list later.`}
         </p>
       </div>
       <div className="mt-5 flex justify-end sm:mt-6">
@@ -89,7 +92,7 @@ export function DeleteCardConfirmation({
           onClick={handleDeleteCard}
           isLoading={deleteCardMutation.isPending}
         >
-          {t`Delete`}
+          {t`Move to Bin`}
         </Button>
       </div>
     </div>
