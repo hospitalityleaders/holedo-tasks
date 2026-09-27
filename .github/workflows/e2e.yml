@@ -41,6 +41,7 @@ jobs:
       MINIO_PORT: "9500"
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
+      S3_HEALTH_URL: http://127.0.0.1:9500
       POSTGRES_URL: postgresql://kan:kan@localhost:5432/kan_e2e
       BETTER_AUTH_SECRET: e2e-test-only-secret-not-for-prod-use
       NEXT_PUBLIC_BASE_URL: http://localhost:3000
@@ -73,15 +74,22 @@ jobs:
       - name: Install Stripe CLI
         run: npm install -g @stripe/cli
 
-      - name: Install MinIO
+      - name: Start S3 test service
         run: |
-          MINIO_RELEASE="minio.RELEASE.2025-09-07T16-13-09Z"
-          MINIO_BASE_URL="https://dl.min.io/server/minio/release/linux-amd64/archive"
-          curl --fail --silent --show-error --location --output "${MINIO_RELEASE}" "${MINIO_BASE_URL}/${MINIO_RELEASE}"
-          curl --fail --silent --show-error --location --output "${MINIO_RELEASE}.sha256sum" "${MINIO_BASE_URL}/${MINIO_RELEASE}.sha256sum"
-          sha256sum --check "${MINIO_RELEASE}.sha256sum"
-          chmod +x "${MINIO_RELEASE}"
-          sudo mv "${MINIO_RELEASE}" /usr/local/bin/minio
+          docker run --detach --rm \
+            --name kan-e2e-s3 \
+            --publish "127.0.0.1:${MINIO_PORT}:5000" \
+            motoserver/moto:5.2.3
+
+          for _ in {1..30}; do
+            if curl -fsS "${S3_HEALTH_URL}" > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs kan-e2e-s3
+          exit 1
 
       - name: Write .env for CI
         run: |

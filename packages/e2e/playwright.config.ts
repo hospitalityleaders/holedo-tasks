@@ -24,6 +24,9 @@ const mailpitHttpPort = process.env.MAILPIT_HTTP_PORT ?? "8025";
 const trelloMockPort = process.env.TRELLO_MOCK_PORT ?? "4025";
 const minioPort = process.env.MINIO_PORT ?? "9500";
 const minioConsolePort = process.env.MINIO_CONSOLE_PORT ?? "9501";
+const s3HealthUrl =
+  process.env.S3_HEALTH_URL ??
+  `http://127.0.0.1:${minioPort}/minio/health/live`;
 const minioRootUser = process.env.MINIO_ROOT_USER ?? "minioadmin";
 const minioRootPassword = process.env.MINIO_ROOT_PASSWORD ?? "minioadmin";
 const attachmentsBucket =
@@ -149,7 +152,7 @@ export default defineConfig({
         },
         {
           command: `minio server /tmp/kan-e2e-minio-data --address :${minioPort} --console-address :${minioConsolePort}`,
-          url: `http://127.0.0.1:${minioPort}/minio/health/live`,
+          url: s3HealthUrl,
           reuseExistingServer: true,
           timeout: 30_000,
           env: {
