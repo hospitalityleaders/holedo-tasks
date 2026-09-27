@@ -3,11 +3,14 @@ import { createAuthMiddleware } from "better-auth/api";
 import { env } from "next-runtime-env";
 
 import type { dbClient } from "@kan/db/client";
+import * as boardRepo from "@kan/db/repository/board.repo";
+import * as listRepo from "@kan/db/repository/list.repo";
 import * as memberRepo from "@kan/db/repository/member.repo";
 import * as userRepo from "@kan/db/repository/user.repo";
+import * as workspaceRepo from "@kan/db/repository/workspace.repo";
 import { createSubscriber, triggerSubscriberWorkflow } from "@kan/email";
 import { createLogger } from "@kan/logger";
-import { createS3Client } from "@kan/shared";
+import { createS3Client, generateUID } from "@kan/shared";
 
 import { downloadImage } from "./utils";
 
@@ -55,6 +58,57 @@ export function createDatabaseHooks(db: dbClient) {
           return Promise.resolve(true);
         },
         async after(user: BetterAuthUser, _context: unknown) {
+          try {
+            const workspacePublicId = generateUID();
+            const firstName = user.name.trim().split(/\s+/)[0] ?? "My";
+            await workspaceRepo.create(db, {
+              publicId: workspacePublicId,
+              name: `${firstName}'s Tasks`,
+              slug: workspacePublicId,
+              createdBy: user.id,
+              createdByEmail: user.email,
+            });
+
+            const workspaceRecord = await workspaceRepo.getByPublicId(
+              db,
+              workspacePublicId,
+            );
+
+            if (!workspaceRecord) {
+              throw new Error(
+                "Personal workspace was not found after creation",
+              );
+            }
+
+            const board = await boardRepo.create(db, {
+              publicId: generateUID(),
+              name: "My Tasks",
+              slug: "my-tasks",
+              createdBy: user.id,
+              workspaceId: workspaceRecord.id,
+            });
+
+            if (!board) {
+              throw new Error("Personal task board could not be created");
+            }
+
+            await listRepo.bulkCreate(
+              db,
+              ["Capture", "Next", "Waiting", "Done"].map((name, index) => ({
+                publicId: generateUID(),
+                name,
+                boardId: board.id,
+                createdBy: user.id,
+                index,
+              })),
+            );
+          } catch (error) {
+            log.error(
+              { err: error, userId: user.id },
+              "Error provisioning personal Tasks workspace",
+            );
+          }
+
           let avatarKey = user.image;
           const storageDomain = process.env.NEXT_PUBLIC_STORAGE_DOMAIN;
           if (

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { authClient } from "@kan/auth/client";
 
 import { Auth } from "~/components/AuthForm";
+import { HoledoAuthBrand } from "~/components/HoledoAuthBrand";
 import { PageHead } from "~/components/PageHead";
 import PatternedBackground from "~/components/PatternedBackground";
 
@@ -37,11 +38,7 @@ export default function SignUpPage() {
         <main className="h-screen bg-light-100 pt-20 dark:bg-dark-50 sm:pt-0">
           <div className="justify-top flex h-full flex-col items-center px-4 sm:justify-center">
             <div className="z-10 flex w-full flex-col items-center">
-              <Link href="/">
-                <h1 className="mb-6 text-lg font-bold tracking-tight text-light-1000 dark:text-dark-1000">
-                  Holedo Tasks
-                </h1>
-              </Link>
+              <HoledoAuthBrand />
               <p className="mb-10 text-3xl font-bold tracking-tight text-light-1000 dark:text-dark-1000">
                 {t`Sign up disabled`}
               </p>
@@ -62,11 +59,7 @@ export default function SignUpPage() {
       <main className="h-screen bg-light-100 pt-20 dark:bg-dark-50 sm:pt-0">
         <div className="justify-top flex h-full flex-col items-center px-4 sm:justify-center">
           <div className="z-10 flex w-full flex-col items-center">
-            <Link href="/">
-              <h1 className="mb-6 text-lg font-bold tracking-tight text-light-1000 dark:text-dark-1000">
-                Holedo Tasks
-              </h1>
-            </Link>
+            <HoledoAuthBrand />
             <p className="mb-10 text-3xl font-bold tracking-tight text-light-1000 dark:text-dark-1000">
               {isMagicLinkSent ? t`Check your inbox` : t`Get started`}
             </p>
@@ -80,7 +73,7 @@ export default function SignUpPage() {
                 </p>
               </div>
             ) : (
-              <div className="w-full rounded-lg border border-light-500 bg-light-300 px-4 py-10 dark:border-dark-400 dark:bg-dark-200 sm:max-w-md lg:px-10">
+              <div className="w-full rounded-lg border border-light-300 bg-white px-4 py-10 shadow-sm dark:border-dark-400 dark:bg-dark-200 sm:max-w-md lg:px-10">
                 <div className="sm:mx-auto sm:w-full sm:max-w-sm">
                   <Auth setIsMagicLinkSent={handleMagicLinkSent} isSignUp />
                 </div>

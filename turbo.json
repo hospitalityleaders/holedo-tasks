@@ -47,6 +47,8 @@
   },
   "globalEnv": [
     "KAN_ADMIN_API_KEY",
+    "ADMIN_TOKEN",
+    "ADMIN_SESSION_SECRET",
     "POSTGRES_URL",
     "TRELLO_APP_API_KEY",
     "TRELLO_APP_SECRET",
