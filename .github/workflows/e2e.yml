@@ -73,26 +73,15 @@ jobs:
       - name: Install Stripe CLI
         run: npm install -g @stripe/cli
 
-      - name: Start MinIO
+      - name: Install MinIO
         run: |
-          # Pin the community image used only by this local E2E S3 fixture.
-          docker run --detach --rm \
-            --name kan-e2e-minio \
-            --publish "127.0.0.1:${MINIO_PORT}:9000" \
-            --env MINIO_ROOT_USER \
-            --env MINIO_ROOT_PASSWORD \
-            minio/minio:RELEASE.2025-09-07T16-13-09Z \
-            server /data
-
-          for _ in {1..30}; do
-            if curl -fsS "http://127.0.0.1:${MINIO_PORT}/minio/health/live" > /dev/null; then
-              exit 0
-            fi
-            sleep 1
-          done
-
-          docker logs kan-e2e-minio
-          exit 1
+          MINIO_RELEASE="minio.RELEASE.2025-09-07T16-13-09Z"
+          MINIO_BASE_URL="https://dl.min.io/server/minio/release/linux-amd64/archive"
+          curl --fail --silent --show-error --location --output "${MINIO_RELEASE}" "${MINIO_BASE_URL}/${MINIO_RELEASE}"
+          curl --fail --silent --show-error --location --output "${MINIO_RELEASE}.sha256sum" "${MINIO_BASE_URL}/${MINIO_RELEASE}.sha256sum"
+          sha256sum --check "${MINIO_RELEASE}.sha256sum"
+          chmod +x "${MINIO_RELEASE}"
+          sudo mv "${MINIO_RELEASE}" /usr/local/bin/minio
 
       - name: Write .env for CI
         run: |
