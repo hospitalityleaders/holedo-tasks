@@ -29,7 +29,7 @@ test(
     }
 
     const listScroll = page
-      .getByRole("button", { name: /^Long list Add card List options$/ })
+      .getByRole("button", { name: /^Long list Add card List options/ })
       .locator("[data-list-scroll-id]");
     const initialScrollTop = await listScroll.evaluate((element) => {
       element.scrollTop = element.scrollHeight;

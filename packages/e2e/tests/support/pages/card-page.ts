@@ -49,7 +49,7 @@ export class CardPage {
       .click();
     await this.page.getByRole("menuitem", { name: "Delete card" }).click();
     await this.page
-      .getByRole("button", { name: "Delete", exact: true })
+      .getByRole("button", { name: "Move to Bin", exact: true })
       .click();
   }
 

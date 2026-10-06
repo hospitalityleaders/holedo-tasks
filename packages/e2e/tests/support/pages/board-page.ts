@@ -12,7 +12,7 @@ export class BoardPage {
   private list(name: string) {
     return this.page
       .getByRole("button", {
-        name: new RegExp(`^${escapeRegExp(name)} Add card(?: List options)?$`),
+        name: new RegExp(`^${escapeRegExp(name)} Add card(?: List options)?`),
       })
       .first();
   }
