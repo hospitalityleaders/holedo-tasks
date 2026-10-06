@@ -1,23 +1,4 @@
-version: "3.8"
-
 services:
-  tasks-migrate:
-    image: ghcr.io/hospitalityleaders/holedo-tasks-migrate:edge
-    pull_policy: always
-    container_name: holedo-tasks-migrate
-    environment:
-      # UpCloud Managed PostgreSQL
-      DB_HOST: "holedo-postgresql-production-gympboioheqo.db.upclouddatabases.com"
-      DB_PORT: "11569"
-      DB_NAME: "holedo_tasks"
-      DB_USER: "holedo_tasks"
-      DB_PASSWORD: "______________________"
-      DB_SSL: "true"
-      DB_SSL_REJECT_UNAUTHORIZED: "false"
-    networks:
-      - npm_proxy
-    restart: "no"
-
   tasks-web:
     image: ghcr.io/hospitalityleaders/holedo-tasks:edge
     pull_policy: always
@@ -29,6 +10,7 @@ services:
       PORT: "3000"
       NEXT_PUBLIC_BASE_URL: "https://tasks.holedo.com"
       BETTER_AUTH_TRUSTED_ORIGINS: "https://tasks.holedo.com"
+      # Internal session-signing value. This is not a user's login password.
       BETTER_AUTH_SECRET: "______________________________"
 
       # UpCloud Managed PostgreSQL
@@ -40,11 +22,12 @@ services:
       DB_SSL: "true"
       DB_SSL_REJECT_UNAUTHORIZED: "false"
 
-      # Demo access: a user can create an account with email and password.
+      # Temporary administrator-only demo access until Holedo SSO is connected.
       NEXT_PUBLIC_ALLOW_CREDENTIALS: "true"
-      NEXT_PUBLIC_DISABLE_SIGN_UP: "false"
+      NEXT_PUBLIC_DISABLE_SIGN_UP: "true"
       NEXT_PUBLIC_DISABLE_EMAIL: "true"
       NEXT_PUBLIC_WHITE_LABEL_HIDE_POWERED_BY: "true"
+      DEMO_USER_EMAIL: "demo@tasks.holedo.com"
 
       # Runtime presentation settings at /admin.
       ADMIN_TOKEN: "______________________________"
@@ -56,7 +39,7 @@ services:
       OIDC_CLIENT_SECRET: ""
       OIDC_DISCOVERY_URL: ""
 
-      LOG_LEVEL: info
+      LOG_LEVEL: "info"
       REDIS_URL: ""
 
       # UpCloud Managed Object Storage (user: holedo_tasks)
@@ -65,14 +48,10 @@ services:
       S3_ATTACHMENTS_BUCKET: "holedo-tasks-attachments"
       S3_ACCESS_KEY_ID: "A________________________"
       S3_SECRET_ACCESS_KEY: "____________________________"
-    depends_on:
-      tasks-migrate:
-        condition: service_completed_successfully
     networks:
       npm_proxy:
         aliases:
           - holedo-tasks
-    read_only: true
     tmpfs:
       - /tmp:size=64m,noexec,nosuid
     restart: unless-stopped

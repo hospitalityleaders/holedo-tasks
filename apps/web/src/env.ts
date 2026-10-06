@@ -17,6 +17,7 @@ export const env = createEnv({
     KAN_ADMIN_API_KEY: z.string().optional(),
     ADMIN_TOKEN: z.string().optional(),
     ADMIN_SESSION_SECRET: z.string().optional(),
+    DEMO_USER_EMAIL: z.string().email().optional(),
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_TRUSTED_ORIGINS: z
       .string()

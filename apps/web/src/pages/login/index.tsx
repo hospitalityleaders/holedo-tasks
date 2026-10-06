@@ -1,5 +1,5 @@
-import LoginView from "~/views/auth/login";
+import { HoledoAuthRedirect } from "~/components/HoledoAuthRedirect";
 
 export default function LoginPage() {
-  return <LoginView />;
+  return <HoledoAuthRedirect kind="login" />;
 }

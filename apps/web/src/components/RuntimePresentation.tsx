@@ -50,6 +50,11 @@ export function RuntimePresentation() {
       settings.headerBackgroundColor,
     );
     root.style.setProperty("--holedo-header-font", settings.headerFontColor);
+    root.style.setProperty(
+      "--holedo-hero-background",
+      settings.heroBackgroundColor,
+    );
+    root.style.setProperty("--holedo-hero-font", settings.heroFontColor);
 
     if (settings.siteIconUrl) {
       const iconUrl = `${settings.siteIconUrl}${settings.siteIconUrl.includes("?") ? "&" : "?"}holedo-v=${dataUpdatedAt}`;

@@ -51,6 +51,23 @@ body {
   font-family: "Source Sans Pro", Arial, sans-serif;
 }
 
+.dark .tasks-admin section,
+.dark .tasks-admin > div.bg-white,
+.dark .tasks-admin form > section {
+  background: #20242e !important;
+}
+
+.dark .tasks-admin h1,
+.dark .tasks-admin h2,
+.dark .tasks-admin strong,
+.dark .tasks-admin label > span {
+  color: #f6f8fa !important;
+}
+
+.dark .tasks-admin p {
+  color: #a6adba;
+}
+
 /* Holedo uses a restrained corner treatment throughout product surfaces. */
 .rounded,
 .rounded-sm,
@@ -69,17 +86,6 @@ select,
 [role="dialog"],
 [role="menu"] {
   border-radius: 2px;
-}
-
-.dark .tasks-admin section {
-  background-color: #20242e;
-}
-
-.dark .tasks-admin h1,
-.dark .tasks-admin h2,
-.dark .tasks-admin label,
-.dark .tasks-admin label span {
-  color: #f6f8fa;
 }
 
 .dark .tasks-admin button.bg-white {

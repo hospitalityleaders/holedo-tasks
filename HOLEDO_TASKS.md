@@ -1,8 +1,8 @@
 # Holedo Tasks
 
-Holedo Tasks is packaged in the same operational shape as Holedo Office: an
-immutable web image, a run-once migration image, runtime configuration through
-Portainer, and a token-protected presentation panel at `/admin`.
+Holedo Tasks is packaged in the same operational shape as Holedo Office: one
+web service, runtime configuration written directly into the Portainer YAML,
+and a token-protected administration panel at `/admin`.
 
 ## Demo deployment
 
@@ -12,10 +12,15 @@ into the YAML. Replace each underscored placeholder inside Portainer's private
 YAML editor before deployment. No Portainer stack environment variables are
 required.
 
-The supplied demo configuration enables email-and-password accounts and turns
-email delivery off. Visit `/signup` once to create the demonstration user. A
-personal workspace and a `My Tasks` board with Capture, Next, Waiting and Done
-are created automatically for every new identity.
+The public Login and Sign Up Free actions go to Holedo's central account pages;
+Tasks does not expose a separate public password form. Until SSO is connected,
+an administrator can sign into `/admin` with `ADMIN_TOKEN` and select **Open
+demo workspace**. The application creates or reuses the private demo identity
+named by `DEMO_USER_EMAIL` without displaying another password. A personal
+workspace and a `My Tasks` board with Capture, Next, Waiting and Done are
+created automatically for that identity. Public credential registration remains
+disabled; the temporary identity can be provisioned only through the protected
+admin action.
 
 ## UpCloud resources
 
@@ -29,9 +34,10 @@ In the existing Managed PostgreSQL service, create:
 - application user `holedo_tasks`, with its own generated password
 - ownership of `holedo_tasks` and its `public` schema granted to that user
 
-The migration image creates the application tables and enables `uuid-ossp` and
-`pg_trgm`; both extensions are supported by UpCloud Managed PostgreSQL. Use the
-private database hostname and the existing assigned port. Tasks accepts the
+The live Tasks database was prepared when the stack was first installed. There
+is no second application and no data import in the production stack. Any future
+schema change is a release operation, not a continuously running service. Use
+the private database hostname and the existing assigned port. Tasks accepts the
 same split `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`
 and `DB_SSL_REJECT_UNAUTHORIZED` fields as Office, so the password does not need
 URL encoding.
@@ -70,28 +76,29 @@ without a Keycloak-specific code path. Tanish only needs to configure:
 - `OIDC_CLIENT_SECRET`
 - `OIDC_DISCOVERY_URL`, for example the realm's well-known discovery URL
 
-The login screen presents the configured provider as **Holedo**. Better Auth
-stores the provider account relationship while the application owns its local
-workspace, board, list and card data. No Office, profile, calendar or other
-Holedo business data is read in this version.
+Holedo remains the user-facing identity provider. The internal authentication
+library stores the secure session and provider relationship while the
+application owns its local workspace, board, list and card data. No Office,
+profile, calendar or other Holedo business data is read in this version.
 
-After OIDC has been verified, set `NEXT_PUBLIC_ALLOW_CREDENTIALS` to `false`
-in the stack to remove password access. Leave `NEXT_PUBLIC_DISABLE_SIGN_UP` as
-`false` if any authenticated Holedo member may create their Tasks account on
-first sign-in. Set it to `true` only if new accounts must be invitation-only.
+After OIDC has been verified, set `NEXT_PUBLIC_ALLOW_CREDENTIALS` to `false` to
+disable the temporary administrator demo action. Each authenticated Holedo
+member receives a private personal workspace on first sign-in. A member can
+also belong to one company workspace, while their personal workspace remains
+private.
 
 ## Runtime presentation settings
 
 Open `https://tasks.holedo.com/admin/` and enter `ADMIN_TOKEN`. The panel can
-change the public headline and subline, Holedo navigation, SEO copy, login and
-sign-up destinations, and legal links without rebuilding the image. Settings
-are stored in PostgreSQL and the public page refreshes them on a short cache.
+change the public page copy, illustration copy, feature cards, navigation,
+fonts, independent navigation and hero colours, accent colour, SEO and social
+metadata, account destinations, legal labels and URLs, theme presentation and
+trusted header/footer code injection without rebuilding the image. It also
+provides the temporary demo entry point and company-workspace provisioning.
+Settings are stored in PostgreSQL.
 
 ## Images
 
-The repository's existing GitHub workflow publishes both images:
-
-- `ghcr.io/hospitalityleaders/holedo-tasks`
-- `ghcr.io/hospitalityleaders/holedo-tasks-migrate`
-
-Tagged releases publish `latest`; the default branch publishes `edge`.
+The repository's GitHub workflow publishes
+`ghcr.io/hospitalityleaders/holedo-tasks`. Tagged releases publish `latest`;
+the default branch publishes `edge`.
