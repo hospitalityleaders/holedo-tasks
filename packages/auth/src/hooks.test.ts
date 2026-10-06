@@ -1,3 +1,4 @@
+import { createHmac } from "crypto";
 import { env } from "next-runtime-env";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -47,6 +48,7 @@ const fakeUser = {
   emailVerified: false,
   name: "Test User",
 };
+const emailSignUpContext = { path: "/sign-up/email" };
 
 describe("createDatabaseHooks", () => {
   const hooks = createDatabaseHooks(db);
@@ -59,7 +61,10 @@ describe("createDatabaseHooks", () => {
     it("allows sign-up when DISABLE_SIGN_UP is not set", async () => {
       mockEnv.mockReturnValue(undefined);
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(true);
       expect(mockGetByEmailAndStatus).not.toHaveBeenCalled();
     });
@@ -69,7 +74,10 @@ describe("createDatabaseHooks", () => {
         key === "NEXT_PUBLIC_DISABLE_SIGN_UP" ? "false" : undefined,
       );
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(true);
       expect(mockGetByEmailAndStatus).not.toHaveBeenCalled();
     });
@@ -80,7 +88,10 @@ describe("createDatabaseHooks", () => {
       );
       mockGetByEmailAndStatus.mockResolvedValue(undefined);
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(false);
       expect(mockGetByEmailAndStatus).toHaveBeenCalledWith(
         db,
@@ -99,7 +110,10 @@ describe("createDatabaseHooks", () => {
         status: "invited",
       });
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(true);
       expect(mockGetByEmailAndStatus).toHaveBeenCalledWith(
         db,
@@ -119,15 +133,16 @@ describe("createDatabaseHooks", () => {
         status: "invited",
       });
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(false);
 
       delete process.env.BETTER_AUTH_ALLOWED_DOMAINS;
     });
 
-    // The user.create.before hook fires for ALL sign-up paths including
-    // OIDC/social — verify invite bypass works regardless of auth method.
-    it("allows OIDC/social sign-up when disabled but user has a pending invitation", async () => {
+    it("allows OIDC/social sign-up when local credential sign-up is disabled", async () => {
       mockEnv.mockImplementation((key: string) =>
         key === "NEXT_PUBLIC_DISABLE_SIGN_UP" ? "true" : undefined,
       );
@@ -137,40 +152,56 @@ describe("createDatabaseHooks", () => {
         email: "sso@corp.com",
         image: "https://provider.com/avatar.jpg",
       };
-      mockGetByEmailAndStatus.mockResolvedValue({
-        id: "member-2",
-        email: "sso@corp.com",
-        status: "invited",
+      const result = await hooks.user.create.before(oidcUser, {
+        path: "/callback/oidc",
       });
-
-      const result = await hooks.user.create.before(oidcUser, {});
       expect(result).toBe(true);
-      expect(mockGetByEmailAndStatus).toHaveBeenCalledWith(
-        db,
-        "sso@corp.com",
-        "invited",
-      );
+      expect(mockGetByEmailAndStatus).not.toHaveBeenCalled();
     });
 
-    it("blocks OIDC/social sign-up when disabled and user has no pending invitation", async () => {
+    it("still applies the allowed-domain policy to OIDC/social sign-up", async () => {
       mockEnv.mockImplementation((key: string) =>
         key === "NEXT_PUBLIC_DISABLE_SIGN_UP" ? "true" : undefined,
       );
+      process.env.BETTER_AUTH_ALLOWED_DOMAINS = "corp.com";
       const oidcUser = {
         ...fakeUser,
         id: "user-oidc",
         email: "random@external.com",
         image: "https://provider.com/avatar.jpg",
       };
-      mockGetByEmailAndStatus.mockResolvedValue(undefined);
-
-      const result = await hooks.user.create.before(oidcUser, {});
+      const result = await hooks.user.create.before(oidcUser, {
+        path: "/callback/oidc",
+      });
       expect(result).toBe(false);
-      expect(mockGetByEmailAndStatus).toHaveBeenCalledWith(
-        db,
-        "random@external.com",
-        "invited",
+      expect(mockGetByEmailAndStatus).not.toHaveBeenCalled();
+
+      delete process.env.BETTER_AUTH_ALLOWED_DOMAINS;
+    });
+
+    it("allows the signed administrator demo provision request", async () => {
+      const secret = "test-auth-secret";
+      const demoEmail = "demo@tasks.holedo.com";
+      mockEnv.mockImplementation((key: string) => {
+        if (key === "NEXT_PUBLIC_DISABLE_SIGN_UP") return "true";
+        if (key === "DEMO_USER_EMAIL") return demoEmail;
+        if (key === "BETTER_AUTH_SECRET") return secret;
+        return undefined;
+      });
+      const token = createHmac("sha256", secret)
+        .update(`holedo-tasks-demo-provision:${demoEmail}`)
+        .digest("hex");
+
+      const result = await hooks.user.create.before(
+        { ...fakeUser, email: demoEmail },
+        {
+          path: "/sign-up/email",
+          headers: new Headers({ "x-holedo-demo-provision": token }),
+        },
       );
+
+      expect(result).toBe(true);
+      expect(mockGetByEmailAndStatus).not.toHaveBeenCalled();
     });
 
     it("allows sign-up when disabled, invitation exists, and domain is allowed", async () => {
@@ -184,7 +215,10 @@ describe("createDatabaseHooks", () => {
         status: "invited",
       });
 
-      const result = await hooks.user.create.before(fakeUser, {});
+      const result = await hooks.user.create.before(
+        fakeUser,
+        emailSignUpContext,
+      );
       expect(result).toBe(true);
 
       delete process.env.BETTER_AUTH_ALLOWED_DOMAINS;
