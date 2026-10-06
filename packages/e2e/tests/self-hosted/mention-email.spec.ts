@@ -27,13 +27,10 @@ async function joinWorkspace(
   const memberContext = await browser.newContext();
   const memberPage = await memberContext.newPage();
   await new AuthPage(memberPage).signUp(member);
-  await new SelfHostedOnboardingPage(memberPage).createFirstWorkspace(
-    "Mention Recipient Workspace",
+  await new SelfHostedOnboardingPage(memberPage).acceptCompanyInvite(
+    inviteLink,
+    "Mention E2E Workspace",
   );
-  await memberPage.goto(inviteLink);
-  await memberPage.waitForURL(/\/boards\?workspacePublicId=/, {
-    timeout: 20_000,
-  });
   await memberContext.close();
 }
 

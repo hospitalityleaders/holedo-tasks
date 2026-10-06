@@ -18,6 +18,7 @@ interface Workspace {
   publicId: string;
   slug: string | undefined;
   plan: "free" | "team" | "pro" | "enterprise" | undefined;
+  kind: "personal" | "company";
   role: "admin" | "member" | "guest";
   weekStartDay: 0 | 1 | 6;
   cardPrefix: string;
@@ -29,6 +30,7 @@ const initialWorkspace: Workspace = {
   publicId: "",
   slug: "",
   plan: "free" as const,
+  kind: "personal",
   role: "member",
   weekStartDay: 1,
   cardPrefix: "",
@@ -94,6 +96,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({
         slug: workspace.slug,
         description: workspace.description,
         plan: workspace.plan,
+        kind: workspace.kind,
         weekStartDay: workspace.weekStartDay,
         cardPrefix: workspace.cardPrefix,
         hasLoaded: true,
@@ -129,6 +132,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({
           name: selectedWorkspace.workspace.name,
           slug: selectedWorkspace.workspace.slug,
           plan: selectedWorkspace.workspace.plan,
+          kind: selectedWorkspace.workspace.kind,
           description: selectedWorkspace.workspace.description,
           role: selectedWorkspace.role as "admin" | "member" | "guest",
           weekStartDay: selectedWorkspace.workspace.weekStartDay as 0 | 1 | 6,
@@ -145,8 +149,10 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({
       }
     }
 
-    const primaryWorkspace = data[0]?.workspace;
-    const primaryWorkspaceRole = data[0]?.role;
+    const primaryMembership =
+      data.find(({ workspace }) => workspace.kind === "personal") ?? data[0];
+    const primaryWorkspace = primaryMembership?.workspace;
+    const primaryWorkspaceRole = primaryMembership?.role;
 
     if (!primaryWorkspace || !primaryWorkspaceRole) return;
     localStorage.setItem("workspacePublicId", primaryWorkspace.publicId);
@@ -155,6 +161,7 @@ export const WorkspaceProvider: React.FC<{ children: ReactNode }> = ({
       name: primaryWorkspace.name,
       slug: primaryWorkspace.slug,
       plan: primaryWorkspace.plan,
+      kind: primaryWorkspace.kind,
       description: primaryWorkspace.description,
       role: primaryWorkspaceRole as "admin" | "member" | "guest",
       weekStartDay: primaryWorkspace.weekStartDay as 0 | 1 | 6,

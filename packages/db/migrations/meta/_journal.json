@@ -267,6 +267,13 @@
       "when": 1790516732720,
       "tag": "20260927134532_AddTaskRuntimeSettings",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791275400000,
+      "tag": "20261006103000_AddWorkspaceKind",
+      "breakpoints": true
     }
   ]
 }

@@ -8,7 +8,7 @@ import { PageHead } from "~/components/PageHead";
 import { DEFAULT_TASK_RUNTIME_SETTINGS } from "~/utils/task-settings";
 
 const fieldClass =
-  "h-11 w-full border border-[#d8dfe5] bg-white px-3 text-base text-[#272e41] outline-none transition focus:border-[#32a3fd] focus:ring-2 focus:ring-[#cce8fe]";
+  "h-11 w-full rounded-[2px] border border-[#d8dfe5] bg-white px-3 text-base text-[#272e41] outline-none transition focus:border-[var(--holedo-accent)] focus:ring-2 focus:ring-[color:var(--holedo-accent)]/20 dark:border-[#3a404c] dark:bg-[#20242e] dark:text-white";
 const textAreaClass = `${fieldClass} h-24 py-3`;
 
 const Field = ({
@@ -140,12 +140,12 @@ export default function TasksAdminPage() {
     return (
       <HoledoPublicShell settings={DEFAULT_TASK_RUNTIME_SETTINGS}>
         <PageHead title="Tasks administration | Holedo" />
-        <main className="mx-auto max-w-5xl px-6 py-20">
+        <main className="tasks-admin mx-auto max-w-5xl px-6 py-20">
           <div className="bg-white p-9 shadow-sm sm:p-12">
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#32a3fd]">
+            <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--holedo-accent)]">
               Tasks administration
             </p>
-            <h1 className="mt-5 text-5xl font-bold text-[#272e41]">Admin</h1>
+            <h1 className="mt-[5px] text-5xl font-bold text-[#272e41]">Admin</h1>
             <p className="mt-7 text-xl text-[#97a1a8]">
               Use the server-side admin token to manage Tasks presentation
               settings.
@@ -164,7 +164,7 @@ export default function TasksAdminPage() {
                 />
                 <button
                   type="submit"
-                  className="h-11 bg-[#32a3fd] px-7 text-lg font-semibold text-white hover:bg-[#168fe8]"
+                  className="h-11 rounded-[2px] bg-[var(--holedo-accent)] px-7 text-lg font-semibold text-white hover:opacity-90"
                 >
                   Connect
                 </button>
@@ -183,13 +183,13 @@ export default function TasksAdminPage() {
   return (
     <HoledoPublicShell settings={settings}>
       <PageHead title="Runtime settings | Holedo Tasks" />
-      <main className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8">
+      <main className="tasks-admin mx-auto max-w-[1400px] px-5 py-14 sm:px-8">
         <div className="mb-9 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.14em] text-[#32a3fd]">
+            <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--holedo-accent)]">
               Tasks administration
             </p>
-            <h1 className="mt-4 text-5xl font-bold text-[#272e41]">
+            <h1 className="mt-[5px] text-5xl font-bold text-[#272e41]">
               Runtime settings
             </h1>
             <p className="mt-5 text-xl text-[#7c8990]">
@@ -202,7 +202,7 @@ export default function TasksAdminPage() {
                 () => setAuthenticated(false),
               );
             }}
-            className="border border-[#d8dfe5] bg-white px-5 py-2.5 font-semibold text-[#384677]"
+            className="rounded-[2px] border border-[#d8dfe5] bg-white px-5 py-2.5 font-semibold text-[#384677]"
           >
             Disconnect
           </button>
@@ -228,6 +228,18 @@ export default function TasksAdminPage() {
                 onChange={(value) => update("heroSubtitle", value)}
                 multiline
               />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field
+                  label="Hero button wording"
+                  value={settings.heroButtonLabel}
+                  onChange={(value) => update("heroButtonLabel", value)}
+                />
+                <Field
+                  label="Hero button destination"
+                  value={settings.heroButtonUrl}
+                  onChange={(value) => update("heroButtonUrl", value)}
+                />
+              </div>
             </div>
           </section>
 
@@ -335,10 +347,30 @@ export default function TasksAdminPage() {
                 Branding, SEO and sharing
               </h2>
               <p className="mt-3 text-[#8b969d]">
-                The Holedo mark and Source Sans Pro are built into the image.
+                Browser and sharing assets can change without rebuilding the
+                image. The Holedo header mark remains separate.
               </p>
             </div>
             <div className="grid gap-5">
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Field
+                  label="Accent colour"
+                  value={settings.accentColor}
+                  onChange={(value) => update("accentColor", value)}
+                />
+                <Field
+                  label="Header background colour"
+                  value={settings.headerBackgroundColor}
+                  onChange={(value) =>
+                    update("headerBackgroundColor", value)
+                  }
+                />
+                <Field
+                  label="Header font colour"
+                  value={settings.headerFontColor}
+                  onChange={(value) => update("headerFontColor", value)}
+                />
+              </div>
               <Field
                 label="Meta title"
                 value={settings.metaTitle}
@@ -350,6 +382,40 @@ export default function TasksAdminPage() {
                 onChange={(value) => update("metaDescription", value)}
                 multiline
               />
+              <Field
+                label="Site icon URL (SVG or PNG)"
+                value={settings.siteIconUrl}
+                onChange={(value) => update("siteIconUrl", value)}
+              />
+              {settings.siteIconUrl && (
+                <div className="flex items-center gap-4 border border-[#e2e7ec] p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={settings.siteIconUrl}
+                    alt="Configured site icon preview"
+                    className="h-14 w-14 rounded-[2px] object-contain"
+                  />
+                  <p className="text-sm text-[#7c8990]">
+                    Browser icon preview. This does not replace the Holedo
+                    header logo.
+                  </p>
+                </div>
+              )}
+              <Field
+                label="Open Graph image URL"
+                value={settings.openGraphImageUrl}
+                onChange={(value) => update("openGraphImageUrl", value)}
+              />
+              {settings.openGraphImageUrl && (
+                <div className="border border-[#e2e7ec] p-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={settings.openGraphImageUrl}
+                    alt="Configured social sharing preview"
+                    className="max-h-52 w-full rounded-[2px] object-contain object-left"
+                  />
+                </div>
+              )}
             </div>
           </section>
 
@@ -418,6 +484,33 @@ export default function TasksAdminPage() {
             </div>
           </section>
 
+          <section className="grid gap-8 bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <h2 className="text-2xl font-bold text-[#272e41]">
+                Code injection
+              </h2>
+              <p className="mt-3 text-[#8b969d]">
+                Trusted HTML, scripts, styles and verification tags. Injection
+                runs on the public and signed-in product, never on this admin
+                page, so the editor remains recoverable.
+              </p>
+            </div>
+            <div className="grid gap-5">
+              <Field
+                label="Header code (inside head)"
+                value={settings.headerCode}
+                onChange={(value) => update("headerCode", value)}
+                multiline
+              />
+              <Field
+                label="Footer code (before closing body)"
+                value={settings.footerCode}
+                onChange={(value) => update("footerCode", value)}
+                multiline
+              />
+            </div>
+          </section>
+
           <div className="sticky bottom-0 flex flex-col gap-3 border-t border-[#dfe5e9] bg-[#f6f8fa]/95 py-4 sm:flex-row sm:items-center sm:justify-end">
             {message && (
               <p className="mr-auto font-semibold text-[#637178]">{message}</p>
@@ -425,7 +518,7 @@ export default function TasksAdminPage() {
             <button
               type="submit"
               disabled={saving}
-              className="h-12 bg-[#32a3fd] px-8 text-lg font-semibold text-white disabled:opacity-60"
+              className="h-12 rounded-[2px] bg-[var(--holedo-accent)] px-8 text-lg font-semibold text-white disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save runtime settings"}
             </button>

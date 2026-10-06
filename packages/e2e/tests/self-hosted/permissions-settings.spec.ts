@@ -18,13 +18,10 @@ async function inviteSecondMember(ownerPage: Page, browser: Browser) {
   const memberPage = await memberContext.newPage();
   const memberUser = createTestUser();
   await new AuthPage(memberPage).signUp(memberUser);
-  await new SelfHostedOnboardingPage(memberPage).createFirstWorkspace(
-    "Member's Own Workspace",
+  await new SelfHostedOnboardingPage(memberPage).acceptCompanyInvite(
+    inviteLink,
+    "E2E Test Workspace",
   );
-  await memberPage.goto(inviteLink);
-  await memberPage.waitForURL(/\/boards\?workspacePublicId=/, {
-    timeout: 20_000,
-  });
 
   return { memberUser, memberContext, memberPage };
 }

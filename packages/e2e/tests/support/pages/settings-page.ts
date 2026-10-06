@@ -74,6 +74,8 @@ export class SettingsPage {
     await this.page.getByRole("menuitem", { name: "Revoke" }).click();
     await this.page.getByRole("checkbox").check();
     await this.page.getByRole("button", { name: "Revoke API key" }).click();
+    await this.page.getByText("API key revoked", { exact: true }).waitFor();
+    await this.page.reload();
   }
 
   async createWebhook(name: string, url: string) {

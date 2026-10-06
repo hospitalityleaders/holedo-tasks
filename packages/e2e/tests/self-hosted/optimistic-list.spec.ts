@@ -37,20 +37,23 @@ test(
     await page.getByRole("button", { name: "Create list" }).click();
 
     const listName = page.locator('input[aria-label="List name"][readonly]');
+    const delayedList = page.getByRole("button", {
+      name: /^Delayed list Add card(?: List options)?$/,
+    });
+    const delayedListAddCard = delayedList.getByRole("button", {
+      name: "Add card",
+      exact: true,
+    });
     await expect(listName).toHaveValue("Delayed list");
     await expect(listName).toHaveAttribute("readonly", "");
+    await expect(delayedListAddCard).toBeDisabled();
     await expect(
-      page.getByRole("button", { name: "Add card", exact: true }),
-    ).toBeDisabled();
-    await expect(
-      page.getByRole("button", { name: "List options", exact: true }),
+      delayedList.getByRole("button", { name: "List options", exact: true }),
     ).toHaveCount(0);
 
     releaseListRequest();
     await created;
-    await expect(
-      page.getByRole("button", { name: "Add card", exact: true }),
-    ).toBeEnabled();
+    await expect(delayedListAddCard).toBeEnabled();
 
     await board.createCard("Created after list acknowledgement");
     await expect(

@@ -67,6 +67,7 @@ export function createDatabaseHooks(db: dbClient) {
               slug: workspacePublicId,
               createdBy: user.id,
               createdByEmail: user.email,
+              kind: "personal",
             });
 
             const workspaceRecord = await workspaceRepo.getByPublicId(
@@ -209,6 +210,24 @@ export function createMiddlewareHooks(db: dbClient) {
           const member = await memberRepo.getByPublicId(db, memberPublicId);
 
           if (member?.id) {
+            const workspace = await workspaceRepo.getById(
+              db,
+              member.workspaceId,
+            );
+            const existingCompanyWorkspace =
+              workspace?.kind === "company"
+                ? await workspaceRepo.getActiveCompanyMembershipByUserId(
+                    db,
+                    userId,
+                    member.workspaceId,
+                  )
+                : undefined;
+
+            if (existingCompanyWorkspace) {
+              throw new Error(
+                "A Holedo member can belong to only one company Tasks workspace",
+              );
+            }
             await memberRepo.acceptInvite(db, {
               memberId: member.id,
               userId,

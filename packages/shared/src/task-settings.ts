@@ -8,8 +8,17 @@ export interface TaskNavigationItem {
 export interface TaskRuntimeSettings {
   heroTitle: string;
   heroSubtitle: string;
+  heroButtonLabel: string;
+  heroButtonUrl: string;
   metaTitle: string;
   metaDescription: string;
+  accentColor: string;
+  headerBackgroundColor: string;
+  headerFontColor: string;
+  siteIconUrl: string;
+  openGraphImageUrl: string;
+  headerCode: string;
+  footerCode: string;
   navigation: TaskNavigationItem[];
   loginLabel: string;
   loginUrl: string;
@@ -25,9 +34,18 @@ export const DEFAULT_TASK_RUNTIME_SETTINGS: TaskRuntimeSettings = {
   heroTitle: "Capture and manage tasks.",
   heroSubtitle:
     "Capture what matters, organise the work and move every commitment to completion.",
+  heroButtonLabel: "Start Now",
+  heroButtonUrl: "/signup",
   metaTitle: "Holedo Tasks",
   metaDescription:
     "Capture, organise and complete tasks in your personal or shared Holedo workspace.",
+  accentColor: "#32a3fd",
+  headerBackgroundColor: "#384677",
+  headerFontColor: "#ffffff",
+  siteIconUrl: "/assets/branding/holedo-icon.png",
+  openGraphImageUrl: "",
+  headerCode: "",
+  footerCode: "",
   navigation: [
     { label: "Tasks", url: "/", order: 0, enabled: true },
     {
@@ -103,6 +121,14 @@ export function normalizeTaskRuntimeSettings(
       input.heroSubtitle,
       DEFAULT_TASK_RUNTIME_SETTINGS.heroSubtitle,
     ),
+    heroButtonLabel: stringValue(
+      input.heroButtonLabel,
+      DEFAULT_TASK_RUNTIME_SETTINGS.heroButtonLabel,
+    ),
+    heroButtonUrl: stringValue(
+      input.heroButtonUrl,
+      DEFAULT_TASK_RUNTIME_SETTINGS.heroButtonUrl,
+    ),
     metaTitle: stringValue(
       input.metaTitle,
       DEFAULT_TASK_RUNTIME_SETTINGS.metaTitle,
@@ -110,6 +136,34 @@ export function normalizeTaskRuntimeSettings(
     metaDescription: stringValue(
       input.metaDescription,
       DEFAULT_TASK_RUNTIME_SETTINGS.metaDescription,
+    ),
+    accentColor: stringValue(
+      input.accentColor,
+      DEFAULT_TASK_RUNTIME_SETTINGS.accentColor,
+    ),
+    headerBackgroundColor: stringValue(
+      input.headerBackgroundColor,
+      DEFAULT_TASK_RUNTIME_SETTINGS.headerBackgroundColor,
+    ),
+    headerFontColor: stringValue(
+      input.headerFontColor,
+      DEFAULT_TASK_RUNTIME_SETTINGS.headerFontColor,
+    ),
+    siteIconUrl: stringValue(
+      input.siteIconUrl,
+      DEFAULT_TASK_RUNTIME_SETTINGS.siteIconUrl,
+    ),
+    openGraphImageUrl: stringValue(
+      input.openGraphImageUrl,
+      DEFAULT_TASK_RUNTIME_SETTINGS.openGraphImageUrl,
+    ),
+    headerCode: stringValue(
+      input.headerCode,
+      DEFAULT_TASK_RUNTIME_SETTINGS.headerCode,
+    ),
+    footerCode: stringValue(
+      input.footerCode,
+      DEFAULT_TASK_RUNTIME_SETTINGS.footerCode,
     ),
     navigation,
     loginLabel: stringValue(

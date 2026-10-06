@@ -31,8 +31,9 @@ export class CardPage {
     await this.currentListTrigger().click();
     const updated = waitForTrpcMutation(this.page, "card.update");
     await this.page
-      .getByRole("checkbox", { name: targetListName })
+      .getByRole("checkbox", { name: targetListName, exact: true })
       .filter({ visible: true })
+      .first()
       .click();
     await updated;
   }
@@ -48,7 +49,7 @@ export class CardPage {
       .click();
     await this.page.getByRole("menuitem", { name: "Delete card" }).click();
     await this.page
-      .getByRole("button", { name: "Delete", exact: true })
+      .getByRole("button", { name: "Move to Bin", exact: true })
       .click();
   }
 

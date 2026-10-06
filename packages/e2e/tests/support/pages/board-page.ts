@@ -3,8 +3,19 @@ import { expect } from "@playwright/test";
 
 import { waitForTrpcMutation, waitForTrpcQuery } from "../wait-for-trpc";
 
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export class BoardPage {
   constructor(private readonly page: Page) {}
+
+  private list(name: string) {
+    return this.page
+      .getByRole("button", {
+        name: new RegExp(`^${escapeRegExp(name)} Add card(?: List options)?`),
+      })
+      .first();
+  }
 
   async createBoard(name: string) {
     await this.page.getByRole("button", { name: "New", exact: true }).click();
@@ -27,6 +38,12 @@ export class BoardPage {
   }
 
   async createList(name: string) {
+    // Holedo Tasks gives every new board its Mission Control lists. Reuse an
+    // existing list when a legacy scenario asks for one of those defaults.
+    if ((await this.list(name).count()) > 0) {
+      return;
+    }
+
     await this.page.getByRole("button", { name: "New list" }).click();
     await this.page.getByPlaceholder("List name").fill(name);
     const created = waitForTrpcMutation(this.page, "list.create");
@@ -39,10 +56,13 @@ export class BoardPage {
   }
 
   async createCard(title: string, listName?: string) {
-    const scope = listName
-      ? this.page.getByRole("button", { name: listName })
-      : this.page;
-    await scope.getByRole("button", { name: "Add card", exact: true }).click();
+    const addCardButton = listName
+      ? this.list(listName).getByRole("button", {
+          name: "Add card",
+          exact: true,
+        })
+      : this.page.getByRole("button", { name: "Add card", exact: true }).last();
+    await addCardButton.click();
     await this.page.getByPlaceholder("Card title").fill(title);
     const created = waitForTrpcMutation(this.page, "card.create");
     await this.page.getByRole("button", { name: "Create card" }).click();
@@ -62,7 +82,7 @@ export class BoardPage {
   }
 
   async renameList(newName: string) {
-    const input = this.page.getByRole("textbox", { name: "List name" });
+    const input = this.page.getByRole("textbox", { name: "List name" }).last();
     await input.fill(newName);
     await input.blur();
   }
@@ -70,6 +90,7 @@ export class BoardPage {
   async deleteList() {
     await this.page
       .getByRole("button", { name: "List options", exact: true })
+      .last()
       .click();
     await this.page.getByRole("menuitem", { name: "Delete list" }).click();
     await this.page
@@ -159,7 +180,10 @@ export class BoardPage {
 
     const dialog = this.page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Select a list" }).click();
-    await this.page.getByRole("option", { name: targetListName }).click();
+    await this.page
+      .getByRole("option", { name: targetListName, exact: true })
+      .first()
+      .click();
 
     const duplicated = waitForTrpcMutation(this.page, "card.duplicate");
     await dialog

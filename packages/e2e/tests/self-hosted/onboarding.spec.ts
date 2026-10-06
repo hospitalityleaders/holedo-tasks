@@ -6,7 +6,7 @@ import { SelfHostedOnboardingPage } from "../support/pages/self-hosted-onboardin
 import { createTestUser } from "../support/test-user";
 
 test(
-  "a new user can sign up, create their first workspace, and reach their boards",
+  "a new user receives a personal workspace and can create a company workspace",
   { tag: "@self-hosted" },
   async ({ page }) => {
     const user = createTestUser();
