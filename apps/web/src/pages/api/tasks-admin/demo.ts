@@ -16,6 +16,10 @@ const demoPassword = () =>
   createHmac("sha256", env.ADMIN_SESSION_SECRET ?? env.BETTER_AUTH_SECRET)
     .update(`holedo-tasks-demo:${demoEmail()}`)
     .digest("hex");
+const demoProvisioningToken = () =>
+  createHmac("sha256", env.BETTER_AUTH_SECRET)
+    .update(`holedo-tasks-demo-provision:${demoEmail()}`)
+    .digest("hex");
 
 const copyAuthCookie = (response: Response, res: NextApiResponse) => {
   const cookie = response.headers.get("set-cookie");
@@ -57,6 +61,9 @@ export default async function handler(
           name: "Holedo Tasks Demo",
           rememberMe: false,
         },
+        headers: new Headers({
+          "x-holedo-demo-provision": demoProvisioningToken(),
+        }),
         asResponse: true,
       });
 

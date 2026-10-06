@@ -18,7 +18,9 @@ an administrator can sign into `/admin` with `ADMIN_TOKEN` and select **Open
 demo workspace**. The application creates or reuses the private demo identity
 named by `DEMO_USER_EMAIL` without displaying another password. A personal
 workspace and a `My Tasks` board with Capture, Next, Waiting and Done are
-created automatically for that identity.
+created automatically for that identity. Public credential registration remains
+disabled; the temporary identity can be provisioned only through the protected
+admin action.
 
 ## UpCloud resources
 

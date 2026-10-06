@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { createAuthMiddleware } from "better-auth/api";
 import { env } from "next-runtime-env";
@@ -27,12 +28,45 @@ type BetterAuthUser = {
   stripeCustomerId?: string | null | undefined;
 } & Record<string, unknown>;
 
+type AuthHookContext = {
+  headers?: Headers;
+  path?: string;
+};
+
+const isAuthorisedDemoProvision = (
+  user: BetterAuthUser,
+  context: AuthHookContext | null | undefined,
+) => {
+  const demoEmail = env("DEMO_USER_EMAIL") ?? "demo@tasks.holedo.com";
+  if (user.email.toLowerCase() !== demoEmail.toLowerCase()) return false;
+
+  const provided = context?.headers?.get("x-holedo-demo-provision");
+  if (!provided) return false;
+  const authSecret = env("BETTER_AUTH_SECRET");
+  if (!authSecret) return false;
+
+  const expected = createHmac("sha256", authSecret)
+    .update(`holedo-tasks-demo-provision:${demoEmail}`)
+    .digest("hex");
+  const providedBytes = Buffer.from(provided);
+  const expectedBytes = Buffer.from(expected);
+  return (
+    providedBytes.length === expectedBytes.length &&
+    timingSafeEqual(providedBytes, expectedBytes)
+  );
+};
+
 export function createDatabaseHooks(db: dbClient) {
   return {
     user: {
       create: {
-        async before(user: BetterAuthUser, _context: unknown) {
-          if (env("NEXT_PUBLIC_DISABLE_SIGN_UP")?.toLowerCase() === "true") {
+        async before(user: BetterAuthUser, rawContext: unknown) {
+          const context = rawContext as AuthHookContext | null;
+          if (
+            context?.path === "/sign-up/email" &&
+            env("NEXT_PUBLIC_DISABLE_SIGN_UP")?.toLowerCase() === "true" &&
+            !isAuthorisedDemoProvision(user, context)
+          ) {
             const pendingInvitation = await memberRepo.getByEmailAndStatus(
               db,
               user.email,

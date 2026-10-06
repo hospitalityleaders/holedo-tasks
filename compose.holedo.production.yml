@@ -24,7 +24,7 @@ services:
 
       # Temporary administrator-only demo access until Holedo SSO is connected.
       NEXT_PUBLIC_ALLOW_CREDENTIALS: "true"
-      NEXT_PUBLIC_DISABLE_SIGN_UP: "false"
+      NEXT_PUBLIC_DISABLE_SIGN_UP: "true"
       NEXT_PUBLIC_DISABLE_EMAIL: "true"
       NEXT_PUBLIC_WHITE_LABEL_HIDE_POWERED_BY: "true"
       DEMO_USER_EMAIL: "demo@tasks.holedo.com"
