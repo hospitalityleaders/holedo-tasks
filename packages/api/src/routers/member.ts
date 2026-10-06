@@ -66,6 +66,13 @@ export const memberRouter = createTRPCRouter({
           code: "NOT_FOUND",
         });
 
+      if (workspace.kind === "personal") {
+        throw new TRPCError({
+          message: "Personal Tasks workspaces cannot have invited members",
+          code: "FORBIDDEN",
+        });
+      }
+
       await assertPermission(ctx.db, userId, workspace.id, "member:invite");
 
       const isInvitedEmailAlreadyMember = workspace.members.some(
@@ -162,6 +169,22 @@ export const memberRouter = createTRPCRouter({
       }
 
       const existingUser = await userRepo.getByEmail(ctx.db, input.email);
+
+      if (existingUser) {
+        const existingCompanyWorkspace =
+          await workspaceRepo.getActiveCompanyMembershipByUserId(
+            ctx.db,
+            existingUser.id,
+            workspace.id,
+          );
+        if (existingCompanyWorkspace) {
+          throw new TRPCError({
+            message:
+              "This Holedo member already belongs to another company Tasks workspace",
+            code: "CONFLICT",
+          });
+        }
+      }
 
       // Get the workspace role to set roleId
       const memberRole = await permissionRepo.getRoleByWorkspaceIdAndName(
@@ -444,6 +467,13 @@ export const memberRouter = createTRPCRouter({
           code: "NOT_FOUND",
         });
 
+      if (workspace.kind === "personal") {
+        throw new TRPCError({
+          message: "Personal Tasks workspaces cannot have invite links",
+          code: "FORBIDDEN",
+        });
+      }
+
       // Check if user can edit members (admin-equivalent)
       await assertPermission(ctx.db, userId, workspace.id, "member:edit");
 
@@ -662,6 +692,20 @@ export const memberRouter = createTRPCRouter({
       if (isMember) {
         throw new TRPCError({
           message: `User is already a member of this workspace`,
+          code: "CONFLICT",
+        });
+      }
+
+      const existingCompanyWorkspace =
+        await workspaceRepo.getActiveCompanyMembershipByUserId(
+          ctx.db,
+          userId,
+          invite.workspaceId,
+        );
+      if (existingCompanyWorkspace) {
+        throw new TRPCError({
+          message:
+            "A Holedo member can belong to only one company Tasks workspace",
           code: "CONFLICT",
         });
       }

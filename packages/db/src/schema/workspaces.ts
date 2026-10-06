@@ -41,6 +41,10 @@ export type { WorkspacePlan } from "@kan/shared/utils";
 export { workspacePlans };
 export const workspacePlanEnum = pgEnum("workspace_plan", workspacePlans);
 
+export const workspaceKinds = ["personal", "company"] as const;
+export type WorkspaceKind = (typeof workspaceKinds)[number];
+export const workspaceKindEnum = pgEnum("workspace_kind", workspaceKinds);
+
 export const workspaces = pgTable(
   "workspace",
   {
@@ -49,6 +53,7 @@ export const workspaces = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     slug: varchar("slug", { length: 255 }).notNull().unique(),
+    kind: workspaceKindEnum("kind").notNull().default("company"),
     plan: workspacePlanEnum("plan").notNull().default("free"),
     showEmailsToMembers: boolean("showEmailsToMembers").notNull().default(true),
     weekStartDay: integer("weekStartDay").notNull().default(1),

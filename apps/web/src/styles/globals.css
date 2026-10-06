@@ -37,6 +37,9 @@
   --holedo-body: #7c8990;
   --holedo-page: #f6f8fa;
   --holedo-border: #e2e7ec;
+  --holedo-accent: #32a3fd;
+  --holedo-header-background: #384677;
+  --holedo-header-font: #ffffff;
 }
 
 html {
@@ -46,6 +49,43 @@ html {
 
 body {
   font-family: "Source Sans Pro", Arial, sans-serif;
+}
+
+/* Holedo uses a restrained corner treatment throughout product surfaces. */
+.rounded,
+.rounded-sm,
+.rounded-md,
+.rounded-lg,
+.rounded-xl,
+.rounded-2xl,
+.rounded-3xl {
+  border-radius: 2px !important;
+}
+
+button,
+input,
+textarea,
+select,
+[role="dialog"],
+[role="menu"] {
+  border-radius: 2px;
+}
+
+.dark .tasks-admin section {
+  background-color: #20242e;
+}
+
+.dark .tasks-admin h1,
+.dark .tasks-admin h2,
+.dark .tasks-admin label,
+.dark .tasks-admin label span {
+  color: #f6f8fa;
+}
+
+.dark .tasks-admin button.bg-white {
+  border-color: #3a404c;
+  background-color: #20242e;
+  color: #f6f8fa;
 }
 
 [contenteditable="true"]:empty:before {

@@ -13,6 +13,7 @@ import {
 } from "drizzle-orm";
 
 import type { dbClient } from "@kan/db/client";
+import type { WorkspaceKind } from "@kan/db/schema";
 import type { Permission, Role } from "@kan/shared";
 import {
   boards,
@@ -71,6 +72,7 @@ export const create = async (
     createdByEmail: string;
     description?: string;
     plan?: "free" | "team" | "pro" | "enterprise";
+    kind?: WorkspaceKind;
   },
 ) => {
   const [workspace] = await db
@@ -84,6 +86,7 @@ export const create = async (
         description: workspaceInput.description,
       }),
       ...(workspaceInput.plan && { plan: workspaceInput.plan }),
+      kind: workspaceInput.kind ?? "company",
       cardPrefix: generateWorkspacePrefix(workspaceInput.name),
       cardCounter: 0,
     })
@@ -94,6 +97,7 @@ export const create = async (
       slug: workspaces.slug,
       description: workspaces.description,
       plan: workspaces.plan,
+      kind: workspaces.kind,
       cardPrefix: workspaces.cardPrefix,
     });
 
@@ -176,6 +180,7 @@ export const getByPublicId = (db: dbClient, workspacePublicId: string) => {
       publicId: true,
       name: true,
       plan: true,
+      kind: true,
       slug: true,
       deletedAt: true,
       createdBy: true,
@@ -191,6 +196,7 @@ export const getById = (db: dbClient, workspaceId: number) => {
       publicId: true,
       name: true,
       plan: true,
+      kind: true,
       slug: true,
     },
     where: eq(workspaces.id, workspaceId),
@@ -207,6 +213,7 @@ export const getByPublicIdWithMembers = (
       publicId: true,
       name: true,
       slug: true,
+      kind: true,
       showEmailsToMembers: true,
       weekStartDay: true,
     },
@@ -299,6 +306,7 @@ export const getAllByUserId = async (db: dbClient, userId: string) => {
           description: true,
           slug: true,
           plan: true,
+          kind: true,
           weekStartDay: true,
           cardPrefix: true,
           deletedAt: true,
@@ -325,6 +333,36 @@ export const getAllOwnedByUserId = async (db: dbClient, userId: string) => {
     },
     where: and(eq(workspaces.createdBy, userId), isNull(workspaces.deletedAt)),
   });
+};
+
+export const getActiveCompanyMembershipByUserId = async (
+  db: dbClient,
+  userId: string,
+  excludeWorkspaceId?: number,
+) => {
+  const [result] = await db
+    .select({
+      workspaceId: workspaces.id,
+      workspacePublicId: workspaces.publicId,
+      workspaceName: workspaces.name,
+    })
+    .from(workspaceMembers)
+    .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+    .where(
+      and(
+        eq(workspaceMembers.userId, userId),
+        eq(workspaceMembers.status, "active"),
+        isNull(workspaceMembers.deletedAt),
+        isNull(workspaces.deletedAt),
+        eq(workspaces.kind, "company"),
+        excludeWorkspaceId
+          ? ne(workspaces.id, excludeWorkspaceId)
+          : undefined,
+      ),
+    )
+    .limit(1);
+
+  return result;
 };
 
 export const getMemberByPublicId = (

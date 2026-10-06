@@ -319,6 +319,16 @@ export const workspaceRouter = createTRPCRouter({
       // generated public id.
       const workspaceSlug = input.slug || workspacePublicId;
 
+      const existingCompanyWorkspace =
+        await workspaceRepo.getActiveCompanyMembershipByUserId(ctx.db, userId);
+      if (existingCompanyWorkspace) {
+        throw new TRPCError({
+          message:
+            "A Holedo member can belong to only one company Tasks workspace",
+          code: "CONFLICT",
+        });
+      }
+
       if (input.slug) {
         const reservedOrPremiumWorkspaceSlug =
           await workspaceSlugRepo.getWorkspaceSlug(ctx.db, input.slug);
@@ -347,6 +357,7 @@ export const workspaceRouter = createTRPCRouter({
         slug: workspaceSlug,
         createdBy: userId,
         createdByEmail: userEmail,
+        kind: "company",
         ...(input.description && { description: input.description }),
       });
 
@@ -397,6 +408,7 @@ export const workspaceRouter = createTRPCRouter({
         slug: result.slug!,
         description: result.description ?? null,
         plan: (unlinkedSlot?.plan ?? result.plan!) as WorkspacePlan,
+        kind: result.kind!,
         cardPrefix: result.cardPrefix!,
       };
     }),
@@ -535,6 +547,13 @@ export const workspaceRouter = createTRPCRouter({
           message: `Workspace not found`,
           code: "NOT_FOUND",
         });
+
+      if (workspace.kind === "personal") {
+        throw new TRPCError({
+          message: "A personal Tasks workspace cannot be deleted",
+          code: "FORBIDDEN",
+        });
+      }
       await assertPermission(ctx.db, userId, workspace.id, "workspace:delete");
 
       if (env("NEXT_PUBLIC_KAN_ENV") === "cloud") {

@@ -17,6 +17,7 @@ import { LinguiProviderWrapper } from "~/providers/lingui";
 import { ModalProvider } from "~/providers/modal";
 import { PopupProvider } from "~/providers/popup";
 import { api } from "~/utils/api";
+import { RuntimePresentation } from "~/components/RuntimePresentation";
 
 export const metadata = {
   title: "Holedo Tasks",
@@ -81,6 +82,7 @@ const MyApp: AppType = ({ Component, pageProps }: AppPropsWithLayout) => {
                 defaultTheme="system"
                 enableSystem
               >
+                <RuntimePresentation />
                 <ModalProvider>
                   <PopupProvider>
                     {posthogKey ? (
