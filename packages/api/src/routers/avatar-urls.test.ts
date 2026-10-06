@@ -132,6 +132,7 @@ describe("avatar URL resolution in routers", () => {
       publicId: "workspace-12",
       name: "Workspace",
       slug: "workspace",
+      kind: "personal",
       showEmailsToMembers: true,
       weekStartDay: null,
       members: [
