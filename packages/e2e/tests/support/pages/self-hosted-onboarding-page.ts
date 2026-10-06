@@ -3,6 +3,16 @@ import type { Page } from "@playwright/test";
 export class SelfHostedOnboardingPage {
   constructor(private readonly page: Page) {}
 
+  async acceptCompanyInvite(inviteLink: string, workspaceName: string) {
+    await this.page.goto(inviteLink);
+    await this.page.waitForURL(/\/boards(?:\?.*)?$/, { timeout: 20_000 });
+    await this.page
+      .getByRole("button", {
+        name: new RegExp(`${workspaceName} company$`),
+      })
+      .waitFor();
+  }
+
   async createFirstWorkspace(name: string) {
     await this.page.waitForURL(/\/boards/);
 

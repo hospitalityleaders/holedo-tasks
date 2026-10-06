@@ -27,6 +27,14 @@ export class BoardPage {
   }
 
   async createList(name: string) {
+    // Holedo Tasks gives every new board its Mission Control lists. Reuse an
+    // existing list when a legacy scenario asks for one of those defaults.
+    if (
+      (await this.page.getByDisplayValue(name, { exact: true }).count()) > 0
+    ) {
+      return;
+    }
+
     await this.page.getByRole("button", { name: "New list" }).click();
     await this.page.getByPlaceholder("List name").fill(name);
     const created = waitForTrpcMutation(this.page, "list.create");
@@ -39,10 +47,14 @@ export class BoardPage {
   }
 
   async createCard(title: string, listName?: string) {
-    const scope = listName
-      ? this.page.getByRole("button", { name: listName })
-      : this.page;
-    await scope.getByRole("button", { name: "Add card", exact: true }).click();
+    const addCardButton = listName
+      ? this.page
+          .getByDisplayValue(listName, { exact: true })
+          .first()
+          .locator("xpath=ancestor::button[1]")
+          .getByRole("button", { name: "Add card", exact: true })
+      : this.page.getByRole("button", { name: "Add card", exact: true }).last();
+    await addCardButton.click();
     await this.page.getByPlaceholder("Card title").fill(title);
     const created = waitForTrpcMutation(this.page, "card.create");
     await this.page.getByRole("button", { name: "Create card" }).click();
@@ -159,7 +171,10 @@ export class BoardPage {
 
     const dialog = this.page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Select a list" }).click();
-    await this.page.getByRole("option", { name: targetListName }).click();
+    await this.page
+      .getByRole("option", { name: targetListName, exact: true })
+      .first()
+      .click();
 
     const duplicated = waitForTrpcMutation(this.page, "card.duplicate");
     await dialog
