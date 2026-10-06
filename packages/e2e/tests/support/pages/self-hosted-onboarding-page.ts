@@ -30,7 +30,10 @@ export class SelfHostedOnboardingPage {
       throw new Error("Company workspace publicId missing from response");
     }
 
-    await this.page.goto(`/boards?workspacePublicId=${workspacePublicId}`);
+    await this.page.evaluate((publicId) => {
+      localStorage.setItem("workspacePublicId", publicId);
+    }, workspacePublicId);
+    await this.page.goto("/boards");
     await this.page.waitForURL(/\/boards$/);
   }
 }
