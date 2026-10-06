@@ -38,7 +38,7 @@ test(
 
     const listName = page.locator('input[aria-label="List name"][readonly]');
     const delayedList = page
-      .getByDisplayValue("Delayed list", { exact: true })
+      .locator('input[aria-label="List name"][value="Delayed list"]')
       .locator("xpath=ancestor::button[1]");
     const delayedListAddCard = delayedList.getByRole("button", {
       name: "Add card",

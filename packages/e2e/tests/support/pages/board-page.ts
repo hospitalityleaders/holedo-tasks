@@ -6,6 +6,12 @@ import { waitForTrpcMutation, waitForTrpcQuery } from "../wait-for-trpc";
 export class BoardPage {
   constructor(private readonly page: Page) {}
 
+  private listInput(name: string) {
+    return this.page.locator(
+      `input[aria-label="List name"][value=${JSON.stringify(name)}]`,
+    );
+  }
+
   async createBoard(name: string) {
     await this.page.getByRole("button", { name: "New", exact: true }).click();
     await this.page.getByRole("heading", { name: "New board" }).waitFor();
@@ -29,9 +35,7 @@ export class BoardPage {
   async createList(name: string) {
     // Holedo Tasks gives every new board its Mission Control lists. Reuse an
     // existing list when a legacy scenario asks for one of those defaults.
-    if (
-      (await this.page.getByDisplayValue(name, { exact: true }).count()) > 0
-    ) {
+    if ((await this.listInput(name).count()) > 0) {
       return;
     }
 
@@ -49,7 +53,9 @@ export class BoardPage {
   async createCard(title: string, listName?: string) {
     const addCardButton = listName
       ? this.page
-          .getByDisplayValue(listName, { exact: true })
+          .locator(
+            `input[aria-label="List name"][value=${JSON.stringify(listName)}]`,
+          )
           .first()
           .locator("xpath=ancestor::button[1]")
           .getByRole("button", { name: "Add card", exact: true })
