@@ -33,7 +33,16 @@ export class SelfHostedOnboardingPage {
     await this.page.evaluate((publicId) => {
       localStorage.setItem("workspacePublicId", publicId);
     }, workspacePublicId);
-    await this.page.goto("/boards");
+
+    // The direct API request does not invalidate the browser's cached
+    // workspace list. Supplying the new workspace in the URL enables the
+    // provider's short polling path until the company workspace appears,
+    // instead of falling back to the already-provisioned personal workspace.
+    await this.page.goto(`/boards?workspacePublicId=${workspacePublicId}`);
     await this.page.waitForURL(/\/boards$/);
+    await this.page.waitForFunction(
+      (publicId) => localStorage.getItem("workspacePublicId") === publicId,
+      workspacePublicId,
+    );
   }
 }
