@@ -14,34 +14,6 @@ import { PageHead } from "~/components/PageHead";
 import { useTaskSettings } from "~/hooks/useTaskSettings";
 import { DEFAULT_TASK_RUNTIME_SETTINGS } from "~/utils/task-settings";
 
-const boardColumns = [
-  { name: "CAPTURE", cards: ["Prepare weekly priorities", "Follow up"] },
-  { name: "NEXT", cards: ["Review proposal", "Confirm meeting"] },
-  { name: "WAITING", cards: ["Approval"] },
-  { name: "DONE", cards: ["Launch notes"] },
-];
-
-const features = [
-  {
-    title: "Your own workspace",
-    description:
-      "Every Holedo member gets a private Tasks workspace from their first sign-in.",
-    icon: HiOutlineUser,
-  },
-  {
-    title: "One shared company",
-    description:
-      "Companies can bring their team into one shared workspace while personal Tasks stay private.",
-    icon: HiOutlineBuildingOffice2,
-  },
-  {
-    title: "Work stays in context",
-    description:
-      "Capture first, move work forward and recover anything placed in the Bin.",
-    icon: HiOutlineArchiveBox,
-  },
-];
-
 export default function HomeView() {
   const router = useRouter();
   const { data: settings = DEFAULT_TASK_RUNTIME_SETTINGS } = useTaskSettings();
@@ -62,6 +34,37 @@ export default function HomeView() {
     );
   }
 
+  const boardColumns = [
+    {
+      name: settings.captureColumnLabel,
+      cards: [settings.captureCardOne, settings.captureCardTwo],
+    },
+    {
+      name: settings.nextColumnLabel,
+      cards: [settings.nextCardOne, settings.nextCardTwo],
+    },
+    { name: settings.waitingColumnLabel, cards: [settings.waitingCard] },
+    { name: settings.doneColumnLabel, cards: [settings.doneCard] },
+  ];
+
+  const features = [
+    {
+      title: settings.personalFeatureTitle,
+      description: settings.personalFeatureDescription,
+      icon: HiOutlineUser,
+    },
+    {
+      title: settings.companyFeatureTitle,
+      description: settings.companyFeatureDescription,
+      icon: HiOutlineBuildingOffice2,
+    },
+    {
+      title: settings.contextFeatureTitle,
+      description: settings.contextFeatureDescription,
+      icon: HiOutlineArchiveBox,
+    },
+  ];
+
   return (
     <HoledoPublicShell settings={settings}>
       <PageHead
@@ -73,18 +76,32 @@ export default function HomeView() {
 
       <main className="flex-1">
         <section
-          className="text-white"
-          style={{ backgroundColor: settings.headerBackgroundColor }}
+          style={{
+            backgroundColor: settings.heroBackgroundColor,
+            color: settings.heroFontColor,
+          }}
         >
-          <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-6 py-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:px-14 lg:py-16">
+          <div
+            className="mx-auto grid w-full max-w-[1600px] gap-10 px-6 py-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:px-14 lg:py-16"
+            style={{ minHeight: settings.heroHeight }}
+          >
             <div className="max-w-[650px]">
-              <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--holedo-accent)]">
-                Holedo Tasks
+              <p
+                className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--holedo-accent)]"
+                style={{ fontFamily: settings.eyebrowFontFamily }}
+              >
+                {settings.eyebrow}
               </p>
-              <h1 className="mt-[5px] text-5xl font-bold leading-[1.04] tracking-[-0.02em] sm:text-6xl">
+              <h1
+                className="mt-[5px] text-5xl font-bold leading-[1.04] tracking-[-0.02em] sm:text-6xl"
+                style={{ fontFamily: settings.headlineFontFamily }}
+              >
                 {settings.heroTitle}
               </h1>
-              <p className="mt-6 max-w-[610px] text-xl leading-8 text-white/75">
+              <p
+                className="mt-6 max-w-[610px] text-xl leading-8 opacity-75"
+                style={{ fontFamily: settings.subtitleFontFamily }}
+              >
                 {settings.heroSubtitle}
               </p>
               <Link
@@ -101,16 +118,16 @@ export default function HomeView() {
             <div className="rounded-[2px] border-2 border-[var(--holedo-accent)] bg-white/10 p-3 sm:p-5">
               <div className="rounded-[2px] bg-[#eef2f7] p-4 text-[#272e41] sm:p-6">
                 <div className="mb-4 flex items-center justify-between">
-                  <p className="font-bold">My Tasks</p>
+                  <p className="font-bold">{settings.boardTitle}</p>
                   <span className="rounded-[2px] bg-[#def1c6] px-2.5 py-1 text-xs font-semibold text-[#4e7c18]">
-                    7 active
+                    {settings.activeCountLabel}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {boardColumns.map((column) => (
                     <div key={column.name} className="bg-[#e4e9ee] p-2">
                       <p className="mb-2 text-[10px] font-bold tracking-[0.05em] text-[#77828d]">
-                        {column.name}
+                        {column.name.toUpperCase()}
                       </p>
                       <div className="space-y-2">
                         {column.cards.map((card) => (
@@ -127,8 +144,8 @@ export default function HomeView() {
                   ))}
                 </div>
                 <div className="mt-4 flex items-center justify-between border-t-2 border-[#fd3732] pt-3 text-[11px] font-bold uppercase tracking-[0.05em] text-[#fd3732]">
-                  <span>Recoverable Bin</span>
-                  <span>Completed work stays in context</span>
+                  <span>{settings.binLabel}</span>
+                  <span>{settings.completedContextLabel}</span>
                 </div>
               </div>
             </div>

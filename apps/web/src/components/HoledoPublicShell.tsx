@@ -152,7 +152,7 @@ export function HoledoPublicShell({
             className="iubenda-white no-brand iubenda-noiframe iubenda-embed hover:text-[var(--holedo-accent)]"
             title="Privacy Policy"
           >
-            Privacy
+            {settings.privacyLabel}
           </a>
           <span aria-hidden="true">·</span>
           <a
@@ -160,7 +160,7 @@ export function HoledoPublicShell({
             className="iubenda-white no-brand iubenda-noiframe iubenda-embed hover:text-[var(--holedo-accent)]"
             title="Cookie Policy"
           >
-            Cookies
+            {settings.cookieLabel}
           </a>
           <span aria-hidden="true">·</span>
           <a
@@ -168,22 +168,26 @@ export function HoledoPublicShell({
             className="iubenda-white no-brand iubenda-noiframe iubenda-embed hover:text-[var(--holedo-accent)]"
             title="Terms and Conditions"
           >
-            Terms
+            {settings.termsLabel}
           </a>
           <span aria-hidden="true">·</span>
           <a
             href={settings.imprintUrl}
             className="hover:text-[var(--holedo-accent)]"
           >
-            Imprint
+            {settings.imprintLabel}
           </a>
-          <span aria-hidden="true">·</span>
-          <a
-            href="#"
-            className="iubenda-cs-preferences-link hover:text-[var(--holedo-accent)]"
-          >
-            Privacy settings
-          </a>
+          {settings.showPrivacySettings && (
+            <>
+              <span aria-hidden="true">·</span>
+              <a
+                href="#"
+                className="iubenda-cs-preferences-link hover:text-[var(--holedo-accent)]"
+              >
+                {settings.privacySettingsLabel}
+              </a>
+            </>
+          )}
           <span aria-hidden="true">·</span>
           <ThemeControl />
         </div>

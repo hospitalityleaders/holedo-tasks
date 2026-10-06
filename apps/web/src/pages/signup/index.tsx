@@ -1,5 +1,5 @@
-import SignupView from "~/views/auth/signup";
+import { HoledoAuthRedirect } from "~/components/HoledoAuthRedirect";
 
 export default function SignupPage() {
-  return <SignupView />;
+  return <HoledoAuthRedirect kind="signup" />;
 }

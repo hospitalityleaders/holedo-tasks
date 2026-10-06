@@ -11,6 +11,14 @@ const fieldClass =
   "h-11 w-full rounded-[2px] border border-[#d8dfe5] bg-white px-3 text-base text-[#272e41] outline-none transition focus:border-[var(--holedo-accent)] focus:ring-2 focus:ring-[color:var(--holedo-accent)]/20 dark:border-[#3a404c] dark:bg-[#20242e] dark:text-white";
 const textAreaClass = `${fieldClass} h-24 py-3`;
 
+interface CompanyWorkspaceSummary {
+  publicId: string;
+  name: string;
+  slug: string;
+  ownerEmail: string;
+  createdAt: string;
+}
+
 const Field = ({
   label,
   value,
@@ -51,11 +59,24 @@ export default function TasksAdminPage() {
   );
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [openingDemo, setOpeningDemo] = useState(false);
+  const [companyName, setCompanyName] = useState("");
+  const [ownerEmail, setOwnerEmail] = useState("");
+  const [companies, setCompanies] = useState<CompanyWorkspaceSummary[]>([]);
+  const [provisioning, setProvisioning] = useState(false);
 
   const loadSettings = async () => {
-    const response = await fetch("/api/tasks-admin/settings");
-    if (!response.ok) throw new Error("Unable to load settings");
-    setSettings((await response.json()) as TaskRuntimeSettings);
+    const [settingsResponse, companiesResponse] = await Promise.all([
+      fetch("/api/tasks-admin/settings"),
+      fetch("/api/tasks-admin/company-workspaces"),
+    ]);
+    if (!settingsResponse.ok) throw new Error("Unable to load settings");
+    setSettings((await settingsResponse.json()) as TaskRuntimeSettings);
+    if (companiesResponse.ok) {
+      setCompanies(
+        (await companiesResponse.json()) as CompanyWorkspaceSummary[],
+      );
+    }
   };
 
   useEffect(() => {
@@ -126,6 +147,51 @@ export default function TasksAdminPage() {
     value: TaskRuntimeSettings[K],
   ) => setSettings((current) => ({ ...current, [key]: value }));
 
+  const openDemo = async () => {
+    setOpeningDemo(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/tasks-admin/demo", { method: "POST" });
+      const result = (await response.json()) as {
+        redirect?: string;
+        message?: string;
+      };
+      if (!response.ok || !result.redirect) {
+        setMessage(result.message ?? "Unable to open the demo workspace");
+        return;
+      }
+      window.location.assign(result.redirect);
+    } finally {
+      setOpeningDemo(false);
+    }
+  };
+
+  const provisionCompany = async () => {
+    setProvisioning(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/tasks-admin/company-workspaces", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyName, ownerEmail }),
+      });
+      const result = (await response.json()) as {
+        message?: string;
+        companies?: CompanyWorkspaceSummary[];
+      };
+      if (!response.ok) {
+        setMessage(result.message ?? "Unable to provision company workspace");
+        return;
+      }
+      setCompanies(result.companies ?? []);
+      setCompanyName("");
+      setOwnerEmail("");
+      setMessage("Company workspace provisioned.");
+    } finally {
+      setProvisioning(false);
+    }
+  };
+
   if (checking) {
     return (
       <HoledoPublicShell settings={DEFAULT_TASK_RUNTIME_SETTINGS}>
@@ -145,7 +211,9 @@ export default function TasksAdminPage() {
             <p className="text-sm font-bold uppercase tracking-[0.08em] text-[var(--holedo-accent)]">
               Tasks administration
             </p>
-            <h1 className="mt-[5px] text-5xl font-bold text-[#272e41]">Admin</h1>
+            <h1 className="mt-[5px] text-5xl font-bold text-[#272e41]">
+              Admin
+            </h1>
             <p className="mt-7 text-xl text-[#97a1a8]">
               Use the server-side admin token to manage Tasks presentation
               settings.
@@ -196,16 +264,35 @@ export default function TasksAdminPage() {
               Changes apply without rebuilding the Tasks image.
             </p>
           </div>
-          <button
-            onClick={() => {
-              void fetch("/api/tasks-admin/session", { method: "DELETE" }).then(
-                () => setAuthenticated(false),
-              );
-            }}
-            className="rounded-[2px] border border-[#d8dfe5] bg-white px-5 py-2.5 font-semibold text-[#384677]"
-          >
-            Disconnect
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-[2px] border border-[#d8dfe5] bg-white px-5 py-2.5 font-semibold text-[#384677]"
+            >
+              View Tasks
+            </a>
+            <button
+              type="button"
+              onClick={() => void openDemo()}
+              disabled={openingDemo}
+              className="rounded-[2px] bg-[var(--holedo-accent)] px-5 py-2.5 font-semibold text-white disabled:opacity-60"
+            >
+              {openingDemo ? "Opening…" : "Open demo workspace"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void fetch("/api/tasks-admin/session", {
+                  method: "DELETE",
+                }).then(() => setAuthenticated(false));
+              }}
+              className="rounded-[2px] border border-[#d8dfe5] bg-white px-5 py-2.5 font-semibold text-[#384677]"
+            >
+              Disconnect
+            </button>
+          </div>
         </div>
 
         <form onSubmit={save} className="space-y-5">
@@ -214,21 +301,26 @@ export default function TasksAdminPage() {
               Public landing
             </h2>
             <p className="mt-2 text-[#8b969d]">
-              The main promise shown to logged-out visitors.
+              All wording in the logged-out hero and its single call to action.
             </p>
             <div className="mt-6 grid gap-5">
               <Field
-                label="Headline"
+                label="Eyebrow"
+                value={settings.eyebrow}
+                onChange={(value) => update("eyebrow", value)}
+              />
+              <Field
+                label="Homepage headline"
                 value={settings.heroTitle}
                 onChange={(value) => update("heroTitle", value)}
               />
               <Field
-                label="Subline"
+                label="Homepage subtitle"
                 value={settings.heroSubtitle}
                 onChange={(value) => update("heroSubtitle", value)}
                 multiline
               />
-              <div className="grid gap-5 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-3">
                 <Field
                   label="Hero button wording"
                   value={settings.heroButtonLabel}
@@ -239,7 +331,170 @@ export default function TasksAdminPage() {
                   value={settings.heroButtonUrl}
                   onChange={(value) => update("heroButtonUrl", value)}
                 />
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-semibold text-[#384677]">
+                    Hero height in pixels
+                  </span>
+                  <input
+                    type="number"
+                    min={320}
+                    max={900}
+                    className={fieldClass}
+                    value={settings.heroHeight}
+                    onChange={(event) =>
+                      update("heroHeight", Number(event.target.value))
+                    }
+                  />
+                </label>
               </div>
+              <div className="grid gap-5 sm:grid-cols-3">
+                <Field
+                  label="Eyebrow font"
+                  value={settings.eyebrowFontFamily}
+                  onChange={(value) => update("eyebrowFontFamily", value)}
+                />
+                <Field
+                  label="Headline font"
+                  value={settings.headlineFontFamily}
+                  onChange={(value) => update("headlineFontFamily", value)}
+                />
+                <Field
+                  label="Subtitle font"
+                  value={settings.subtitleFontFamily}
+                  onChange={(value) => update("subtitleFontFamily", value)}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="grid gap-8 bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <h2 className="text-2xl font-bold text-[#272e41]">
+                Hero task board
+              </h2>
+              <p className="mt-3 text-[#8b969d]">
+                Edit every label and example task in the homepage illustration.
+              </p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field
+                label="Board title"
+                value={settings.boardTitle}
+                onChange={(value) => update("boardTitle", value)}
+              />
+              <Field
+                label="Active count wording"
+                value={settings.activeCountLabel}
+                onChange={(value) => update("activeCountLabel", value)}
+              />
+              <Field
+                label="Capture column"
+                value={settings.captureColumnLabel}
+                onChange={(value) => update("captureColumnLabel", value)}
+              />
+              <Field
+                label="Capture task 1"
+                value={settings.captureCardOne}
+                onChange={(value) => update("captureCardOne", value)}
+              />
+              <Field
+                label="Capture task 2"
+                value={settings.captureCardTwo}
+                onChange={(value) => update("captureCardTwo", value)}
+              />
+              <Field
+                label="Next column"
+                value={settings.nextColumnLabel}
+                onChange={(value) => update("nextColumnLabel", value)}
+              />
+              <Field
+                label="Next task 1"
+                value={settings.nextCardOne}
+                onChange={(value) => update("nextCardOne", value)}
+              />
+              <Field
+                label="Next task 2"
+                value={settings.nextCardTwo}
+                onChange={(value) => update("nextCardTwo", value)}
+              />
+              <Field
+                label="Waiting column"
+                value={settings.waitingColumnLabel}
+                onChange={(value) => update("waitingColumnLabel", value)}
+              />
+              <Field
+                label="Waiting task"
+                value={settings.waitingCard}
+                onChange={(value) => update("waitingCard", value)}
+              />
+              <Field
+                label="Done column"
+                value={settings.doneColumnLabel}
+                onChange={(value) => update("doneColumnLabel", value)}
+              />
+              <Field
+                label="Done task"
+                value={settings.doneCard}
+                onChange={(value) => update("doneCard", value)}
+              />
+              <Field
+                label="Bin wording"
+                value={settings.binLabel}
+                onChange={(value) => update("binLabel", value)}
+              />
+              <Field
+                label="Completed-work wording"
+                value={settings.completedContextLabel}
+                onChange={(value) => update("completedContextLabel", value)}
+              />
+            </div>
+          </section>
+
+          <section className="grid gap-8 bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <h2 className="text-2xl font-bold text-[#272e41]">
+                Feature cards
+              </h2>
+              <p className="mt-3 text-[#8b969d]">
+                The three product promises beneath the hero.
+              </p>
+            </div>
+            <div className="grid gap-5">
+              <Field
+                label="Personal workspace heading"
+                value={settings.personalFeatureTitle}
+                onChange={(value) => update("personalFeatureTitle", value)}
+              />
+              <Field
+                label="Personal workspace description"
+                value={settings.personalFeatureDescription}
+                onChange={(value) =>
+                  update("personalFeatureDescription", value)
+                }
+                multiline
+              />
+              <Field
+                label="Company workspace heading"
+                value={settings.companyFeatureTitle}
+                onChange={(value) => update("companyFeatureTitle", value)}
+              />
+              <Field
+                label="Company workspace description"
+                value={settings.companyFeatureDescription}
+                onChange={(value) => update("companyFeatureDescription", value)}
+                multiline
+              />
+              <Field
+                label="Context heading"
+                value={settings.contextFeatureTitle}
+                onChange={(value) => update("contextFeatureTitle", value)}
+              />
+              <Field
+                label="Context description"
+                value={settings.contextFeatureDescription}
+                onChange={(value) => update("contextFeatureDescription", value)}
+                multiline
+              />
             </div>
           </section>
 
@@ -352,23 +607,31 @@ export default function TasksAdminPage() {
               </p>
             </div>
             <div className="grid gap-5">
-              <div className="grid gap-5 sm:grid-cols-3">
+              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
                 <Field
                   label="Accent colour"
                   value={settings.accentColor}
                   onChange={(value) => update("accentColor", value)}
                 />
                 <Field
-                  label="Header background colour"
+                  label="Navigation background"
                   value={settings.headerBackgroundColor}
-                  onChange={(value) =>
-                    update("headerBackgroundColor", value)
-                  }
+                  onChange={(value) => update("headerBackgroundColor", value)}
                 />
                 <Field
-                  label="Header font colour"
+                  label="Navigation font colour"
                   value={settings.headerFontColor}
                   onChange={(value) => update("headerFontColor", value)}
+                />
+                <Field
+                  label="Hero background"
+                  value={settings.heroBackgroundColor}
+                  onChange={(value) => update("heroBackgroundColor", value)}
+                />
+                <Field
+                  label="Hero font colour"
+                  value={settings.heroFontColor}
+                  onChange={(value) => update("heroFontColor", value)}
                 />
               </div>
               <Field
@@ -425,8 +688,8 @@ export default function TasksAdminPage() {
                 Access and account buttons
               </h2>
               <p className="mt-3 text-[#8b969d]">
-                Keep local paths for the demo. They can point to Holedo identity
-                endpoints when production SSO is enabled.
+                These public buttons open Holedo's central login and
+                registration pages. They never expose a second Tasks login.
               </p>
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
@@ -481,6 +744,97 @@ export default function TasksAdminPage() {
                 value={settings.imprintUrl}
                 onChange={(value) => update("imprintUrl", value)}
               />
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field
+                  label="Privacy label"
+                  value={settings.privacyLabel}
+                  onChange={(value) => update("privacyLabel", value)}
+                />
+                <Field
+                  label="Cookies label"
+                  value={settings.cookieLabel}
+                  onChange={(value) => update("cookieLabel", value)}
+                />
+                <Field
+                  label="Terms label"
+                  value={settings.termsLabel}
+                  onChange={(value) => update("termsLabel", value)}
+                />
+                <Field
+                  label="Imprint label"
+                  value={settings.imprintLabel}
+                  onChange={(value) => update("imprintLabel", value)}
+                />
+                <Field
+                  label="Privacy settings label"
+                  value={settings.privacySettingsLabel}
+                  onChange={(value) => update("privacySettingsLabel", value)}
+                />
+              </div>
+              <label className="flex items-center gap-3 font-semibold text-[#384677]">
+                <input
+                  type="checkbox"
+                  checked={settings.showPrivacySettings}
+                  onChange={(event) =>
+                    update("showPrivacySettings", event.target.checked)
+                  }
+                />
+                Show privacy settings in the footer
+              </label>
+            </div>
+          </section>
+
+          <section className="grid gap-8 bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[0.7fr_1.3fr]">
+            <div>
+              <h2 className="text-2xl font-bold text-[#272e41]">
+                Company workspaces
+              </h2>
+              <p className="mt-3 text-[#8b969d]">
+                Provision one shared company workspace after its owner has
+                signed in once. Every member keeps their private workspace and
+                can belong to only one company workspace.
+              </p>
+            </div>
+            <div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field
+                  label="Company name"
+                  value={companyName}
+                  onChange={setCompanyName}
+                />
+                <Field
+                  label="Owner email"
+                  value={ownerEmail}
+                  onChange={setOwnerEmail}
+                />
+              </div>
+              <button
+                type="button"
+                disabled={provisioning || !companyName || !ownerEmail}
+                onClick={() => void provisionCompany()}
+                className="mt-4 h-11 w-full rounded-[2px] bg-[var(--holedo-accent)] px-6 font-semibold text-white disabled:opacity-50"
+              >
+                {provisioning ? "Provisioning…" : "Provision company workspace"}
+              </button>
+              <div className="mt-5 divide-y divide-[#edf0f2] border-t border-[#edf0f2]">
+                {companies.length === 0 ? (
+                  <p className="py-4 text-[#8b969d]">
+                    No company workspaces have been provisioned.
+                  </p>
+                ) : (
+                  companies.map((company) => (
+                    <div
+                      key={company.publicId}
+                      className="flex flex-col gap-1 py-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <strong className="text-[#272e41]">{company.name}</strong>
+                      <span className="text-sm text-[#7c8990]">
+                        {company.ownerEmail}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </section>
 

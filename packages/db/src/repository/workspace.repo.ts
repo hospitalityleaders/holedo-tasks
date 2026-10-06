@@ -335,6 +335,34 @@ export const getAllOwnedByUserId = async (db: dbClient, userId: string) => {
   });
 };
 
+export const getAllCompanyWorkspaces = async (db: dbClient) => {
+  return db.query.workspaces.findMany({
+    columns: {
+      publicId: true,
+      name: true,
+      slug: true,
+      createdAt: true,
+    },
+    with: {
+      members: {
+        columns: {
+          email: true,
+          role: true,
+          status: true,
+        },
+        where: and(
+          eq(workspaceMembers.role, "admin"),
+          eq(workspaceMembers.status, "active"),
+          isNull(workspaceMembers.deletedAt),
+        ),
+        limit: 1,
+      },
+    },
+    where: and(eq(workspaces.kind, "company"), isNull(workspaces.deletedAt)),
+    orderBy: [desc(workspaces.createdAt)],
+  });
+};
+
 export const getActiveCompanyMembershipByUserId = async (
   db: dbClient,
   userId: string,
@@ -355,9 +383,7 @@ export const getActiveCompanyMembershipByUserId = async (
         isNull(workspaceMembers.deletedAt),
         isNull(workspaces.deletedAt),
         eq(workspaces.kind, "company"),
-        excludeWorkspaceId
-          ? ne(workspaces.id, excludeWorkspaceId)
-          : undefined,
+        excludeWorkspaceId ? ne(workspaces.id, excludeWorkspaceId) : undefined,
       ),
     )
     .limit(1);
@@ -423,7 +449,9 @@ export const isWorkspaceSlugAvailable = async (
         // so no other workspace may claim it as a custom slug either.
         and(
           eq(workspaces.publicId, workspaceSlug),
-          excludeWorkspaceId ? ne(workspaces.id, excludeWorkspaceId) : undefined,
+          excludeWorkspaceId
+            ? ne(workspaces.id, excludeWorkspaceId)
+            : undefined,
         ),
       ),
     ),
