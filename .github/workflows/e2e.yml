@@ -115,8 +115,8 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter @kan/e2e exec playwright install --with-deps chromium
 
-      - name: Run e2e tests
-        run: pnpm test:e2e
+      - name: Run Holedo Tasks self-hosted e2e tests
+        run: pnpm --filter @kan/e2e test:self-hosted
 
       - name: Upload Playwright report
         if: always()
