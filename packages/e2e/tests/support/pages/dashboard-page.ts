@@ -16,8 +16,6 @@ export class DashboardPage {
     const signedOut = waitForResponsePath(this.page, "/api/auth/sign-out");
     await this.page.getByRole("menuitem", { name: "Logout" }).click();
     await signedOut;
-    await this.page.waitForURL(/\/login/);
-    await this.page.getByPlaceholder("Enter your email address").waitFor();
-    await this.page.waitForLoadState("networkidle");
+    await this.page.waitForURL("https://www.holedo.com/login/");
   }
 }
