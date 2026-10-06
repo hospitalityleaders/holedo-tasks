@@ -37,9 +37,9 @@ test(
     await page.getByRole("button", { name: "Create list" }).click();
 
     const listName = page.locator('input[aria-label="List name"][readonly]');
-    const delayedList = page
-      .locator('input[aria-label="List name"][value="Delayed list"]')
-      .locator("xpath=ancestor::button[1]");
+    const delayedList = page.getByRole("button", {
+      name: /^Delayed list Add card(?: List options)?$/,
+    });
     const delayedListAddCard = delayedList.getByRole("button", {
       name: "Add card",
       exact: true,
@@ -48,7 +48,7 @@ test(
     await expect(listName).toHaveAttribute("readonly", "");
     await expect(delayedListAddCard).toBeDisabled();
     await expect(
-      page.getByRole("button", { name: "List options", exact: true }),
+      delayedList.getByRole("button", { name: "List options", exact: true }),
     ).toHaveCount(0);
 
     releaseListRequest();

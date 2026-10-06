@@ -28,7 +28,9 @@ test(
       await board.createCard(index === 0 ? cardTitle : `Card ${index + 1}`);
     }
 
-    const listScroll = page.locator("[data-list-scroll-id]").first();
+    const listScroll = page
+      .getByRole("button", { name: /^Long list Add card List options$/ })
+      .locator("[data-list-scroll-id]");
     const initialScrollTop = await listScroll.evaluate((element) => {
       element.scrollTop = element.scrollHeight;
       return element.scrollTop;

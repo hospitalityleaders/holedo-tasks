@@ -26,14 +26,18 @@ test(
 
     await board.renameList("Renamed list");
     await page.reload();
-    await expect(page.getByRole("textbox", { name: "List name" })).toHaveValue(
-      "Renamed list",
-    );
+    await expect(
+      page.getByRole("button", {
+        name: /^Renamed list Add card List options$/,
+      }),
+    ).toHaveCount(1);
 
     await board.deleteList();
-    await expect(page.getByRole("textbox", { name: "List name" })).toHaveCount(
-      0,
-    );
+    await expect(
+      page.getByRole("button", {
+        name: /^Renamed list Add card List options$/,
+      }),
+    ).toHaveCount(0);
     await expect(page.getByText("E2E Test Card")).toHaveCount(0);
   },
 );

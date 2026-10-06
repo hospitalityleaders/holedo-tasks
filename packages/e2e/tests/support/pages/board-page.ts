@@ -3,13 +3,18 @@ import { expect } from "@playwright/test";
 
 import { waitForTrpcMutation, waitForTrpcQuery } from "../wait-for-trpc";
 
+const escapeRegExp = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export class BoardPage {
   constructor(private readonly page: Page) {}
 
-  private listInput(name: string) {
-    return this.page.locator(
-      `input[aria-label="List name"][value=${JSON.stringify(name)}]`,
-    );
+  private list(name: string) {
+    return this.page
+      .getByRole("button", {
+        name: new RegExp(`^${escapeRegExp(name)} Add card(?: List options)?$`),
+      })
+      .first();
   }
 
   async createBoard(name: string) {
@@ -35,7 +40,7 @@ export class BoardPage {
   async createList(name: string) {
     // Holedo Tasks gives every new board its Mission Control lists. Reuse an
     // existing list when a legacy scenario asks for one of those defaults.
-    if ((await this.listInput(name).count()) > 0) {
+    if ((await this.list(name).count()) > 0) {
       return;
     }
 
@@ -52,13 +57,10 @@ export class BoardPage {
 
   async createCard(title: string, listName?: string) {
     const addCardButton = listName
-      ? this.page
-          .locator(
-            `input[aria-label="List name"][value=${JSON.stringify(listName)}]`,
-          )
-          .first()
-          .locator("xpath=ancestor::button[1]")
-          .getByRole("button", { name: "Add card", exact: true })
+      ? this.list(listName).getByRole("button", {
+          name: "Add card",
+          exact: true,
+        })
       : this.page.getByRole("button", { name: "Add card", exact: true }).last();
     await addCardButton.click();
     await this.page.getByPlaceholder("Card title").fill(title);
@@ -80,7 +82,7 @@ export class BoardPage {
   }
 
   async renameList(newName: string) {
-    const input = this.page.getByRole("textbox", { name: "List name" });
+    const input = this.page.getByRole("textbox", { name: "List name" }).last();
     await input.fill(newName);
     await input.blur();
   }
@@ -88,6 +90,7 @@ export class BoardPage {
   async deleteList() {
     await this.page
       .getByRole("button", { name: "List options", exact: true })
+      .last()
       .click();
     await this.page.getByRole("menuitem", { name: "Delete list" }).click();
     await this.page
